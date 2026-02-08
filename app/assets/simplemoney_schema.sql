@@ -36,7 +36,7 @@ CREATE TABLE `configurations` (
     `config_key` VARCHAR(255) NOT NULL COMMENT 'Configuration Key',
     `config_value` TEXT DEFAULT NULL COMMENT 'Configuration Value',
     `user_id` INT DEFAULT NULL NULL COMMENT 'User id configuration. NULL is for all users',
-    CONSTRAINT `fk_configurations_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+    CONSTRAINT `fk_configurations_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) COMMENT 'Configurations Table. No depends from other tables.';
 
 -- Insert default configurations
@@ -112,8 +112,8 @@ CREATE TABLE `categories` (
 -- Insert default categories
 INSERT INTO `categories` (`id`, `parent_id`, `title`, `sort_order`, `is_active`, `user_id`, `is_automotive`)
 VALUES (-1, NULL, '<SPLIT>', -1, 1, NULL, 0),
-VALUES (-2, NULL, '<NO_CATEGORY>', -1, 1, NULL, 0),
-VALUES (-3, NULL, '<TRANSFER>', -1, 1, NULL, 0);
+       (-2, NULL, '<NO_CATEGORY>', -1, 1, NULL, 0),
+       (-3, NULL, '<TRANSFER>', -1, 1, NULL, 0);
 
 -- ============================================================================
 -- TABLE: attributes (no dependencies)
