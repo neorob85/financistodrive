@@ -1,0 +1,35 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Uploads
+public/uploads
+
+# Sensitive data
+server/data/db.config.json
+server/data/jwt.secret
+server/data/vapid.secret
+
+# AI
+.claude
