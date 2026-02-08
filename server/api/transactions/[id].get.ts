@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
         const attachments = (attachmentRows as any[]).map((a: any) => ({
             id: a.id,
-            filePath: a.file_path
+            filePath: `/api${a.file_path}`
         }))
 
         // Determine transaction type
