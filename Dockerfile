@@ -16,6 +16,7 @@ WORKDIR /app
 
 COPY --from=build /app/.output .output
 COPY --from=build /app/app/assets/simplemoney_schema.sql app/assets/simplemoney_schema.sql
+COPY --from=build /app/app/assets/sql app/assets/sql
 
 # Create persistent directories
 RUN mkdir -p server/data public/uploads
