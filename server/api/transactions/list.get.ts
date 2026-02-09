@@ -44,13 +44,26 @@ export default defineEventHandler(async (event) => {
             total = Number(countResult[0]?.total || 0)
         }
 
+        // Format date as local string to prevent UTC conversion during JSON serialization
+        function formatLocalDate(date: Date | string): string {
+            if (!date) return ''
+            const d = date instanceof Date ? date : new Date(date)
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2, '0')
+            const seconds = String(d.getSeconds()).padStart(2, '0')
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+        }
+
         return {
             transactions: transactions.map((tx: any) => ({
                 id: tx.id,
                 title: tx.title,
                 amountFrom: Number(tx.amountFrom),
                 amountTo: tx.amountTo ? Number(tx.amountTo) : null,
-                transactionDate: tx.transactionDate,
+                transactionDate: formatLocalDate(tx.transactionDate),
                 toAccountId: tx.toAccountId,
                 categoryTitle: tx.categoryTitle,
                 accountTitle: tx.accountTitle,

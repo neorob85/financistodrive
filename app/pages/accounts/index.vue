@@ -61,7 +61,8 @@
           class="billing-period">
           {{ $t('accounts.billingPeriod', {
             start: formatShortDate(account.currentPeriodStart), end:
-              formatShortDate(account.currentPeriodEnd) }) }}
+              formatShortDate(account.currentPeriodEnd)
+          }) }}
         </div>
 
         <!-- Previous billing cycle balance -->
@@ -121,6 +122,15 @@
       <span class="total-amount" :class="{ negative: totalAmount < 0 }">
         € {{ formatAmount(totalAmount) }}
       </span>
+    </div>
+
+    <!-- Recalculate button -->
+    <div v-if="filteredAccounts.length > 0" class="recalculate-section">
+      <button class="btn btn-outline" @click="recalculateBalances" :disabled="recalculating">
+        <span v-if="recalculating" class="spinner-sm"></span>
+        <span v-else>🔄</span>
+        Ricalcola saldi
+      </button>
     </div>
 
     <!-- FAB Button -->
@@ -293,6 +303,7 @@ const filteredAccounts = computed(() => {
 })
 const showModal = ref(false)
 const saving = ref(false)
+const recalculating = ref(false)
 const formError = ref('')
 const editingId = ref<number | null>(null)
 const currencies = ref<{ id: number; title: string; symbol: string }[]>([])
@@ -519,6 +530,18 @@ function getCycleUsageClass(account: Account): string {
   if (percent >= 90) return 'danger'
   if (percent >= 70) return 'warning'
   return 'safe'
+}
+
+async function recalculateBalances() {
+  recalculating.value = true
+  try {
+    await $fetch('/api/accounts/recalculate', { method: 'POST' })
+    await loadAccounts()
+  } catch (error) {
+    console.error('Failed to recalculate balances:', error)
+  } finally {
+    recalculating.value = false
+  }
 }
 </script>
 
@@ -814,6 +837,46 @@ function getCycleUsageClass(account: Account): string {
 
 .total-amount.negative {
   color: var(--color-error);
+}
+
+.recalculate-section {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.btn-outline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-sm {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .spinner-lg {

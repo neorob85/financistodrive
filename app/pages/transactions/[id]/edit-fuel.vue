@@ -40,7 +40,8 @@
                 <label for="vehicle">Veicolo *</label>
                 <select id="vehicle" v-model="form.vehicleId" class="input-field" required>
                     <option :value="null" disabled>-- Seleziona veicolo --</option>
-                    <option v-for="v in vehicles.filter(v => v.isActive || v.id === form.vehicleId)" :key="v.id" :value="v.id">
+                    <option v-for="v in vehicles.filter(v => v.isActive || v.id === form.vehicleId)" :key="v.id"
+                        :value="v.id">
                         {{ v.brand }} {{ v.model }} ({{ v.licensePlate }})
                     </option>
                 </select>
@@ -112,6 +113,43 @@
                 </select>
             </div>
 
+            <!-- Attachments Section -->
+            <div class="attachments-section">
+                <label>Allegati</label>
+
+                <!-- Existing attachments -->
+                <div v-if="attachments.length > 0" class="attachment-preview">
+                    <div v-for="att in attachments" :key="att.id" class="preview-item">
+                        <a :href="att.filePath" target="_blank" class="attachment-link">
+                            {{ getFileName(att.filePath) }}
+                        </a>
+                        <button type="button" class="remove-file-btn" @click="deleteAttachment(att.id)"
+                            :disabled="deletingAttachment === att.id">
+                            <span v-if="deletingAttachment === att.id" class="spinner-sm"></span>
+                            <span v-else>×</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload buttons -->
+                <div class="attachment-buttons">
+                    <label class="attachment-btn">
+                        <input type="file" ref="fileInput" multiple accept="image/*,.pdf,.doc,.docx"
+                            @change="handleFileSelect" hidden>
+                        <span v-if="uploading" class="spinner-sm"></span>
+                        <span v-else>📁 File</span>
+                    </label>
+                    <button type="button" class="attachment-btn" @click="openCamera" :disabled="uploading">
+                        <span v-if="uploading" class="spinner-sm"></span>
+                        <span v-else>📷 Foto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hidden camera input -->
+            <input ref="cameraInput" type="file" accept="image/*" capture="environment" @change="handleCameraCapture"
+                hidden>
+
             <!-- Notes -->
             <div class="input-group">
                 <label for="notes">Note</label>
@@ -170,6 +208,11 @@ interface Fuel {
     title: string
 }
 
+interface Attachment {
+    id: number
+    filePath: string
+}
+
 const router = useRouter()
 const route = useRoute()
 const transactionId = computed(() => Number(route.params.id))
@@ -183,6 +226,11 @@ const accounts = ref<Account[]>([])
 const categories = ref<Category[]>([])
 const vehicles = ref<Vehicle[]>([])
 const fuels = ref<Fuel[]>([])
+const attachments = ref<Attachment[]>([])
+const uploading = ref(false)
+const deletingAttachment = ref<number | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const cameraInput = ref<HTMLInputElement | null>(null)
 
 const form = ref({
     transactionDate: '',
@@ -299,10 +347,19 @@ async function loadData() {
             return
         }
 
-        // Populate form with fuel log data
-        const dateObj = new Date(tx.transactionDate)
-        const localDate = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
-        form.value.transactionDate = localDate.toISOString().slice(0, 16)
+        // Populate form with fuel log data - parse as local time (not UTC)
+        const normalized = tx.transactionDate.replace('T', ' ').replace('Z', '')
+        const parts = normalized.split(' ')
+        const datePart = parts[0] || ''
+        const timePart = parts[1] || '00:00'
+        const dateParts = datePart.split('-')
+        const timeParts = timePart.split(':')
+        const year = dateParts[0] || '2026'
+        const month = dateParts[1] || '01'
+        const day = dateParts[2] || '01'
+        const hours = timeParts[0] || '00'
+        const minutes = timeParts[1] || '00'
+        form.value.transactionDate = `${year}-${month}-${day}T${hours}:${minutes}`
 
         form.value.vehicleId = tx.fuelLog.vehicleId
         form.value.odometer = tx.fuelLog.odometer
@@ -315,6 +372,9 @@ async function loadData() {
         form.value.isFullTank = tx.fuelLog.isFullTank
         form.value.isPreviousMissed = tx.fuelLog.isPreviousMissed || false
         form.value.notes = tx.notes || ''
+
+        // Load attachments
+        attachments.value = tx.attachments || []
 
     } catch (error: any) {
         loadError.value = error.data?.message || 'Errore nel caricamento'
@@ -364,6 +424,89 @@ async function handleSubmit() {
         formError.value = error.data?.message || 'Errore nel salvataggio'
     } finally {
         saving.value = false
+    }
+}
+
+// Attachment functions
+function getFileName(path: string): string {
+    return path.split('/').pop() || 'allegato'
+}
+
+function triggerFileSelect() {
+    fileInput.value?.click()
+}
+
+async function handleFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement
+    if (!input.files || input.files.length === 0) return
+
+    uploading.value = true
+    try {
+        const formData = new FormData()
+        for (const file of input.files) {
+            formData.append('files', file)
+        }
+
+        const response = await $fetch<{ success: boolean; files: string[] }>(`/api/transactions/${transactionId.value}/attachments`, {
+            method: 'POST',
+            body: formData
+        })
+
+        if (response.success && response.files) {
+            const txData = await $fetch<{ transaction: any }>(`/api/transactions/${transactionId.value}`)
+            attachments.value = txData.transaction.attachments || []
+        }
+    } catch (error: any) {
+        formError.value = error?.data?.message || 'Errore nel caricamento del file'
+    } finally {
+        uploading.value = false
+        if (input) input.value = ''
+    }
+}
+
+async function deleteAttachment(attachmentId: number) {
+    deletingAttachment.value = attachmentId
+    try {
+        await $fetch(`/api/transactions/${transactionId.value}/attachments/${attachmentId}`, {
+            method: 'DELETE'
+        })
+        attachments.value = attachments.value.filter(a => a.id !== attachmentId)
+    } catch (error: any) {
+        formError.value = error?.data?.message || 'Errore nell\'eliminazione dell\'allegato'
+    } finally {
+        deletingAttachment.value = null
+    }
+}
+
+function openCamera() {
+    cameraInput.value?.click()
+}
+
+async function handleCameraCapture(event: Event) {
+    const input = event.target as HTMLInputElement
+    if (!input.files || input.files.length === 0) return
+
+    uploading.value = true
+    try {
+        const formData = new FormData()
+        for (const file of input.files) {
+            formData.append('files', file)
+        }
+
+        const response = await $fetch<{ success: boolean; files: string[] }>(`/api/transactions/${transactionId.value}/attachments`, {
+            method: 'POST',
+            body: formData
+        })
+
+        if (response.success && response.files) {
+            const txData = await $fetch<{ transaction: any }>(`/api/transactions/${transactionId.value}`)
+            attachments.value = txData.transaction.attachments || []
+        }
+    } catch (error: any) {
+        formError.value = error?.data?.message || 'Errore nel caricamento della foto'
+    } finally {
+        uploading.value = false
+        if (input) input.value = ''
     }
 }
 
@@ -573,5 +716,98 @@ onMounted(() => {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Attachments Section */
+.attachments-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.attachments-section>label {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.attachment-buttons {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.attachment-btn {
+    flex: 1;
+    padding: var(--space-md);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+}
+
+.attachment-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.attachment-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.attachment-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-glass);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.preview-item .attachment-link {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.preview-item .attachment-link:hover {
+    text-decoration: underline;
+}
+
+.remove-file-btn {
+    background: none;
+    border: none;
+    color: var(--color-error);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.remove-file-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.spinner-sm {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
 }
 </style>

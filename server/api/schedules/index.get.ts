@@ -42,6 +42,19 @@ export default defineEventHandler(async (event) => {
             [result.userId]
         )
 
+        // Format date as local string to prevent UTC conversion during JSON serialization
+        function formatLocalDate(date: Date | string | null): string {
+            if (!date) return ''
+            const d = date instanceof Date ? date : new Date(date)
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2, '0')
+            const seconds = String(d.getSeconds()).padStart(2, '0')
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+        }
+
         const schedules = (rows as any[]).map((row: any) => ({
             id: row.id,
             title: row.title,
@@ -54,9 +67,9 @@ export default defineEventHandler(async (event) => {
             categoryId: row.category_id,
             categoryTitle: row.category_title,
             frequency: row.frequency,
-            nextTransactionDate: row.next_transaction_date,
-            startDate: row.start_date,
-            endDate: row.end_date,
+            nextTransactionDate: formatLocalDate(row.next_transaction_date),
+            startDate: formatLocalDate(row.start_date),
+            endDate: row.end_date ? formatLocalDate(row.end_date) : null,
             isTransfer: !!row.is_transfer,
             isAutomotive: !!row.is_automotive,
             isActive: !!row.is_active

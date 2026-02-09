@@ -136,12 +136,25 @@ export default defineEventHandler(async (event) => {
             }
         }
 
+        // Format date as local string to prevent UTC conversion during JSON serialization
+        function formatLocalDate(date: Date | string): string {
+            if (!date) return ''
+            const d = date instanceof Date ? date : new Date(date)
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2, '0')
+            const seconds = String(d.getSeconds()).padStart(2, '0')
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+        }
+
         const transaction = {
             id: row.id,
             title: row.title,
             amountFrom: parseFloat(row.amount_from),
             amountTo: row.amount_to ? parseFloat(row.amount_to) : null,
-            transactionDate: row.transaction_date,
+            transactionDate: formatLocalDate(row.transaction_date),
             fromAccountId: row.from_account_id,
             fromAccountTitle: row.from_account_title,
             toAccountId: row.to_account_id,

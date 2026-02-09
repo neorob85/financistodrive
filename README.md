@@ -1,3 +1,17 @@
+For years I used the open source Financisto app to manage my finances.
+You can find it herer https://github.com/dsolonenko/financisto
+
+This app is a sort of Financisto clone, but with a different approach.
+
+You can track expenses, income and transfers between accounts and also manage your vehicles. All in one.
+
+It supports PWA with notifications.
+
+To be clear: yes, I used a lot of AI (Claude Opus 4.5) to make this app.
+
+Download the app and enjoy it!
+
+
 # Nuxt Minimal Starter
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.

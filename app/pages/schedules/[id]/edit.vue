@@ -242,9 +242,19 @@ const flatCategories = computed(() => {
 
 function formatDateForInput(dateStr: string) {
     if (!dateStr) return ''
-    const d = new Date(dateStr)
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-    return local.toISOString().slice(0, 16)
+    // Parse date string as local time (not UTC) to avoid timezone offset issues
+    const normalized = dateStr.replace('T', ' ').replace('Z', '')
+    const parts = normalized.split(' ')
+    const datePart = parts[0] || ''
+    const timePart = parts[1] || '00:00'
+    const dateParts = datePart.split('-')
+    const timeParts = timePart.split(':')
+    const year = dateParts[0] || '2026'
+    const month = dateParts[1] || '01'
+    const day = dateParts[2] || '01'
+    const hours = timeParts[0] || '00'
+    const minutes = timeParts[1] || '00'
+    return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
 function goBack() {

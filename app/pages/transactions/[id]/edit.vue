@@ -150,7 +150,8 @@
                 <label for="project">Progetto</label>
                 <select id="project" v-model="form.projectId" class="input-field">
                     <option :value="null">-- Nessun progetto --</option>
-                    <option v-for="p in projects.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}</option>
+                    <option v-for="p in projects.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}
+                    </option>
                 </select>
             </div>
 
@@ -162,6 +163,51 @@
                     <option v-for="p in payees.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}</option>
                 </select>
             </div>
+
+            <!-- Attachments Section -->
+            <div class="attachments-section">
+                <label>Allegati</label>
+
+                <!-- Existing attachments -->
+                <div v-if="attachments.length > 0" class="attachment-preview">
+                    <div v-for="att in attachments" :key="att.id" class="preview-item">
+                        <a :href="att.filePath" target="_blank" class="attachment-link">
+                            {{ getFileName(att.filePath) }}
+                        </a>
+                        <button type="button" class="remove-file-btn" @click="deleteAttachment(att.id)"
+                            :disabled="deletingAttachment === att.id">
+                            <span v-if="deletingAttachment === att.id" class="spinner-sm"></span>
+                            <span v-else>×</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pending files preview -->
+                <div v-if="pendingFiles.length > 0" class="attachment-preview">
+                    <div v-for="(file, index) in pendingFiles" :key="'pending-' + index" class="preview-item pending">
+                        <span>{{ file.name }}</span>
+                        <button type="button" class="remove-file-btn" @click="removePendingFile(index)">×</button>
+                    </div>
+                </div>
+
+                <!-- Upload buttons -->
+                <div class="attachment-buttons">
+                    <label class="attachment-btn">
+                        <input type="file" ref="fileInput" multiple accept="image/*,.pdf,.doc,.docx"
+                            @change="handleFileSelect" hidden>
+                        <span v-if="uploading" class="spinner-sm"></span>
+                        <span v-else>📁 File</span>
+                    </label>
+                    <button type="button" class="attachment-btn" @click="openCamera" :disabled="uploading">
+                        <span v-if="uploading" class="spinner-sm"></span>
+                        <span v-else>📷 Foto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hidden camera input -->
+            <input ref="cameraInput" type="file" accept="image/*" capture="environment" @change="handleCameraCapture"
+                hidden>
 
             <!-- Notes -->
             <div class="input-group">
@@ -221,6 +267,11 @@ interface Project {
     isActive: boolean
 }
 
+interface Attachment {
+    id: number
+    filePath: string
+}
+
 interface SplitItem {
     id?: number
     amount: number
@@ -243,6 +294,7 @@ interface TransactionDetail {
     notes: string | null
     isTransfer: boolean
     isAutomotive: boolean
+    attachments: Attachment[]
     children: {
         id: number
         amountFrom: number
@@ -269,6 +321,12 @@ const isSplit = ref(false)
 const splits = ref<SplitItem[]>([])
 const formError = ref('')
 const saving = ref(false)
+const attachments = ref<Attachment[]>([])
+const pendingFiles = ref<File[]>([])
+const uploading = ref(false)
+const deletingAttachment = ref<number | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const cameraInput = ref<HTMLInputElement | null>(null)
 
 // Store original values for balance calculation
 const originalData = ref<TransactionDetail | null>(null)
@@ -370,6 +428,96 @@ function removeSplit(index: number) {
     splits.value.splice(index, 1)
 }
 
+// Attachment functions
+function getFileName(path: string): string {
+    return path.split('/').pop() || 'allegato'
+}
+
+function triggerFileSelect() {
+    fileInput.value?.click()
+}
+
+async function handleFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement
+    if (!input.files || input.files.length === 0) return
+
+    uploading.value = true
+    try {
+        const formData = new FormData()
+        for (const file of input.files) {
+            formData.append('files', file)
+        }
+
+        const response = await $fetch<{ success: boolean; files: string[] }>(`/api/transactions/${transactionId.value}/attachments`, {
+            method: 'POST',
+            body: formData
+        })
+
+        if (response.success && response.files) {
+            // Reload attachments from transaction
+            const txData = await $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${transactionId.value}`)
+            attachments.value = txData.transaction.attachments || []
+        }
+    } catch (error: any) {
+        formError.value = error?.data?.message || 'Errore nel caricamento del file'
+    } finally {
+        uploading.value = false
+        // Reset input
+        if (input) input.value = ''
+    }
+}
+
+async function deleteAttachment(attachmentId: number) {
+    deletingAttachment.value = attachmentId
+    try {
+        await $fetch(`/api/transactions/${transactionId.value}/attachments/${attachmentId}`, {
+            method: 'DELETE'
+        })
+        // Remove from local list
+        attachments.value = attachments.value.filter(a => a.id !== attachmentId)
+    } catch (error: any) {
+        formError.value = error?.data?.message || 'Errore nell\'eliminazione dell\'allegato'
+    } finally {
+        deletingAttachment.value = null
+    }
+}
+
+function openCamera() {
+    cameraInput.value?.click()
+}
+
+function removePendingFile(index: number) {
+    pendingFiles.value.splice(index, 1)
+}
+
+async function handleCameraCapture(event: Event) {
+    const input = event.target as HTMLInputElement
+    if (!input.files || input.files.length === 0) return
+
+    uploading.value = true
+    try {
+        const formData = new FormData()
+        for (const file of input.files) {
+            formData.append('files', file)
+        }
+
+        const response = await $fetch<{ success: boolean; files: string[] }>(`/api/transactions/${transactionId.value}/attachments`, {
+            method: 'POST',
+            body: formData
+        })
+
+        if (response.success && response.files) {
+            const txData = await $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${transactionId.value}`)
+            attachments.value = txData.transaction.attachments || []
+        }
+    } catch (error: any) {
+        formError.value = error?.data?.message || 'Errore nel caricamento della foto'
+    } finally {
+        uploading.value = false
+        if (input) input.value = ''
+    }
+}
+
 function goBack() {
     router.back()
 }
@@ -463,9 +611,20 @@ async function loadData() {
         // Populate form
         form.value.title = tx.title
         form.value.amount = Math.abs(tx.amountFrom)
-        const dateObj = new Date(tx.transactionDate)
-        const localDate = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
-        form.value.transactionDate = localDate.toISOString().slice(0, 16)
+        // Parse date string as local time (not UTC) to avoid timezone offset issues
+        // The date from server is already in local time format
+        const normalized = tx.transactionDate.replace('T', ' ').replace('Z', '')
+        const parts = normalized.split(' ')
+        const datePart = parts[0] || ''
+        const timePart = parts[1] || '00:00'
+        const dateParts = datePart.split('-')
+        const timeParts = timePart.split(':')
+        const year = dateParts[0] || '2026'
+        const month = dateParts[1] || '01'
+        const day = dateParts[2] || '01'
+        const hours = timeParts[0] || '00'
+        const minutes = timeParts[1] || '00'
+        form.value.transactionDate = `${year}-${month}-${day}T${hours}:${minutes}`
         form.value.fromAccountId = tx.fromAccountId
         form.value.toAccountId = tx.toAccountId
         form.value.categoryId = tx.categoryId && tx.categoryId > 0 ? tx.categoryId : null
@@ -493,6 +652,9 @@ async function loadData() {
                 toAccountId: child.toAccountId
             }))
         }
+
+        // Load attachments
+        attachments.value = tx.attachments || []
     } catch (error: any) {
         console.error('Failed to load transaction:', error)
         loadError.value = error?.data?.message || 'Errore nel caricamento della transazione'
@@ -875,5 +1037,103 @@ onMounted(() => {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Attachments Section */
+.attachments-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.attachments-section>label {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.attachment-buttons {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.attachment-btn {
+    flex: 1;
+    padding: var(--space-md);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+}
+
+.attachment-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.attachment-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.attachment-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-glass);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.preview-item.pending {
+    background: var(--color-accent-bg, rgba(59, 130, 246, 0.1));
+    border: 1px dashed var(--color-accent);
+}
+
+.preview-item .attachment-link {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.preview-item .attachment-link:hover {
+    text-decoration: underline;
+}
+
+.remove-file-btn {
+    background: none;
+    border: none;
+    color: var(--color-error);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.remove-file-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.spinner-sm {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
 }
 </style>

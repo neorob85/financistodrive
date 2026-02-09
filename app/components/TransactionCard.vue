@@ -55,23 +55,41 @@ const formattedAmount = computed(() => {
   return `${sign}€${amount.toFixed(2)}`
 })
 
+// Parse date string as local time (not UTC) to avoid timezone offset issues
+function parseLocalDate(dateStr: string): Date {
+  // Handle both ISO format with T and database format with space
+  const normalized = dateStr.replace('T', ' ').replace('Z', '')
+  const parts = normalized.split(' ')
+  const datePart = parts[0] || ''
+  const timePart = parts[1] || '00:00:00'
+  const dateParts = datePart.split('-')
+  const timeParts = timePart.split(':')
+  const year = parseInt(dateParts[0] || '0', 10)
+  const month = parseInt(dateParts[1] || '1', 10) - 1
+  const day = parseInt(dateParts[2] || '1', 10)
+  const hours = parseInt(timeParts[0] || '0', 10)
+  const minutes = parseInt(timeParts[1] || '0', 10)
+  const seconds = parseInt(timeParts[2] || '0', 10)
+  return new Date(year, month, day, hours, minutes, seconds)
+}
+
 const dayNumber = computed(() => {
-  const date = new Date(props.transaction.transactionDate)
+  const date = parseLocalDate(props.transaction.transactionDate)
   return date.getDate()
 })
 
 const monthLabel = computed(() => {
-  const date = new Date(props.transaction.transactionDate)
+  const date = parseLocalDate(props.transaction.transactionDate)
   return date.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '').toUpperCase()
 })
 
 const txYear = computed(() => {
-  const date = new Date(props.transaction.transactionDate)
+  const date = parseLocalDate(props.transaction.transactionDate)
   return String(date.getFullYear())
 })
 
 const txTime = computed(() => {
-  const date = new Date(props.transaction.transactionDate)
+  const date = parseLocalDate(props.transaction.transactionDate)
   return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 })
 </script>
