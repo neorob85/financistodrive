@@ -223,12 +223,12 @@
 
             <!-- Transactions list -->
             <div class="transactions-section">
-                <h3 class="section-title-lg">Transazioni</h3>
+                <h3 class="section-title-lg">{{ $t('vehicles.transactions') }}</h3>
                 <div v-if="loadingTransactions && transactions.length === 0" class="loading-inline">
                     <div class="spinner-sm"></div>
                 </div>
                 <div v-else-if="!loadingTransactions && transactions.length === 0" class="empty-state-sm">
-                    Nessuna transazione
+                    {{ $t('vehicles.noTransactions') }}
                 </div>
                 <div v-else class="transactions-list">
                     <template v-for="group in groupedTransactions" :key="group.label">
@@ -239,7 +239,7 @@
                     <!-- Load more sentinel -->
                     <div v-if="hasMoreTransactions" class="load-more" ref="loadMoreRef">
                         <div v-if="loadingMoreTransactions" class="spinner-sm"></div>
-                        <span v-else>Scorri per caricare</span>
+                        <span v-else>{{ $t('vehicles.scrollToLoad') }}</span>
                     </div>
                 </div>
             </div>
@@ -267,6 +267,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 interface VehicleDetail {
     id: number
@@ -427,7 +428,7 @@ const groupedTransactions = computed(() => {
 
     for (const tx of transactions.value) {
         const txYear = new Date(tx.transactionDate).getFullYear()
-        const label = txYear === currentYear ? "Quest'anno" : String(txYear)
+        const label = txYear === currentYear ? t('vehicles.thisYear') : String(txYear)
 
         if (!currentGroup || currentGroup.label !== label) {
             currentGroup = { label, transactions: [], balance: 0 }
@@ -1206,14 +1207,14 @@ function createAutomotiveTransaction() {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 16px var(--color-accent-glow);
     transition: transform 0.2s, box-shadow 0.2s;
     z-index: 50;
 }
 
 .fab-btn:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 24px var(--color-accent-glow);
 }
 
 .fab-btn:active {

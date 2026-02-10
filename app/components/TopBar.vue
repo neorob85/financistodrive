@@ -59,7 +59,7 @@
 
       <!-- Right group: Entities menu -->
       <div class="top-bar-right">
-        <NuxtLink to="/reports" class="dashboard-link" title="Report">
+        <NuxtLink to="/reports" class="dashboard-link" :title="$t('nav.reports')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 20V10M12 20V4M6 20v-6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>

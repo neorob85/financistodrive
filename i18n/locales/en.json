@@ -40,10 +40,10 @@
     "entities": "Entities",
     "categories": "Categories",
     "payees": "Payees",
-    "vehicles": "Vehicles",
     "maintenance": "Maintenance",
     "scheduled": "Scheduled",
-    "alerts": "Maintenance Alerts"
+    "alerts": "Maintenance Alerts",
+    "reports": "Reports"
   },
   "login": {
     "title": "Financisto Drive",
@@ -228,7 +228,11 @@
     "purchaseDate": "Purchase Date",
     "purchasePrice": "Purchase Price",
     "createVehicle": "Create Vehicle",
-    "brandModelRequired": "Brand and model are required"
+    "brandModelRequired": "Brand and model are required",
+    "transactions": "Transactions",
+    "noTransactions": "No transactions",
+    "scrollToLoad": "Scroll to load more",
+    "thisYear": "This year"
   },
   "maintenance": {
     "title": "Maintenance",
@@ -458,5 +462,23 @@
   },
   "user": {
     "defaultName": "User"
+  },
+  "reports": {
+    "title": "Reports",
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "thisYear": "This year",
+    "lastYear": "Last year",
+    "custom": "Custom",
+    "from": "From",
+    "to": "To",
+    "noTransactions": "No transactions in this period",
+    "income": "Income",
+    "expenses": "Expenses",
+    "balance": "Balance",
+    "expensesByCategory": "Expenses by category",
+    "categoryDetails": "Category details",
+    "category": "Category",
+    "total": "Total"
   }
 }

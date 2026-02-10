@@ -121,8 +121,8 @@ const txTime = computed(() => {
 }
 
 .transaction-card.card-maintenance {
-  border-left: 3px solid rgba(245, 158, 11, 0.5);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), var(--color-bg-card));
+  border-left: 3px solid var(--color-warning-border);
+  background: linear-gradient(135deg, var(--color-warning-bg), var(--color-bg-card));
 }
 
 .tx-date-badge {

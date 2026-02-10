@@ -1,7 +1,7 @@
 <template>
     <div class="reports-page">
         <header class="page-header">
-            <h1>📊 Report</h1>
+            <h1>📊 {{ $t('reports.title') }}</h1>
         </header>
 
         <!-- Period selector -->
@@ -15,11 +15,11 @@
         <!-- Custom date range -->
         <div v-if="selectedPeriod === 'custom'" class="custom-range glass-card">
             <div class="date-field">
-                <label>Da</label>
+                <label>{{ $t('reports.from') }}</label>
                 <input type="date" v-model="customFrom" @change="fetchReport" />
             </div>
             <div class="date-field">
-                <label>A</label>
+                <label>{{ $t('reports.to') }}</label>
                 <input type="date" v-model="customTo" @change="fetchReport" />
             </div>
         </div>
@@ -35,7 +35,7 @@
         <!-- Empty -->
         <div v-else-if="categories.length === 0" class="empty-state">
             <div class="empty-icon">📭</div>
-            <p>Nessuna transazione in questo periodo</p>
+            <p>{{ $t('reports.noTransactions') }}</p>
         </div>
 
         <!-- Report content -->
@@ -43,15 +43,15 @@
             <!-- Totals summary -->
             <div class="totals-section glass-card">
                 <div class="total-row">
-                    <span class="total-label">Entrate</span>
+                    <span class="total-label">{{ $t('reports.income') }}</span>
                     <span class="total-value income">+€{{ formatAmount(totals.income) }}</span>
                 </div>
                 <div class="total-row">
-                    <span class="total-label">Spese</span>
+                    <span class="total-label">{{ $t('reports.expenses') }}</span>
                     <span class="total-value expense">-€{{ formatAmount(totals.expenses) }}</span>
                 </div>
                 <div class="total-row total-balance">
-                    <span class="total-label">Saldo</span>
+                    <span class="total-label">{{ $t('reports.balance') }}</span>
                     <span class="total-value" :class="totals.balance >= 0 ? 'income' : 'expense'">
                         {{ totals.balance >= 0 ? '+' : '-' }}€{{ formatAmount(Math.abs(totals.balance)) }}
                     </span>
@@ -60,7 +60,7 @@
 
             <!-- Expense bar chart -->
             <div v-if="maxExpense > 0" class="chart-section glass-card">
-                <h3 class="section-title">Spese per categoria</h3>
+                <h3 class="section-title">{{ $t('reports.expensesByCategory') }}</h3>
                 <div class="bar-chart">
                     <div v-for="cat in sortedByExpenses" :key="cat.categoryId" class="bar-row">
                         <div class="bar-label">{{ cat.categoryTitle }}</div>
@@ -74,13 +74,13 @@
 
             <!-- Category details table -->
             <div class="details-section glass-card">
-                <h3 class="section-title">Dettaglio per categoria</h3>
+                <h3 class="section-title">{{ $t('reports.categoryDetails') }}</h3>
                 <div class="category-list">
                     <div class="category-header">
-                        <span class="cat-name">Categoria</span>
-                        <span class="cat-amount">Spese</span>
-                        <span class="cat-amount">Entrate</span>
-                        <span class="cat-amount">Saldo</span>
+                        <span class="cat-name">{{ $t('reports.category') }}</span>
+                        <span class="cat-amount">{{ $t('reports.expenses') }}</span>
+                        <span class="cat-amount">{{ $t('reports.income') }}</span>
+                        <span class="cat-amount">{{ $t('reports.balance') }}</span>
                     </div>
                     <div v-for="cat in categories" :key="cat.categoryId" class="category-row">
                         <span class="cat-name">{{ cat.categoryTitle }}</span>
@@ -95,7 +95,7 @@
                     </div>
                     <!-- Total row -->
                     <div class="category-row total-category-row">
-                        <span class="cat-name">Totale</span>
+                        <span class="cat-name">{{ $t('reports.total') }}</span>
                         <span class="cat-amount expense">-€{{ formatAmount(totals.expenses) }}</span>
                         <span class="cat-amount income">+€{{ formatAmount(totals.income) }}</span>
                         <span class="cat-amount" :class="totals.balance >= 0 ? 'income' : 'expense'">
@@ -112,6 +112,8 @@
 definePageMeta({
     layout: 'default'
 })
+
+const { t } = useI18n()
 
 interface CategoryReport {
     categoryId: number
@@ -135,13 +137,13 @@ const selectedPeriod = ref('this_month')
 const customFrom = ref('')
 const customTo = ref('')
 
-const periods = [
-    { key: 'this_month', label: 'Questo mese' },
-    { key: 'last_month', label: 'Mese scorso' },
-    { key: 'this_year', label: "Quest'anno" },
-    { key: 'last_year', label: 'Anno scorso' },
-    { key: 'custom', label: 'Personalizzato' }
-]
+const periods = computed(() => [
+    { key: 'this_month', label: t('reports.thisMonth') },
+    { key: 'last_month', label: t('reports.lastMonth') },
+    { key: 'this_year', label: t('reports.thisYear') },
+    { key: 'last_year', label: t('reports.lastYear') },
+    { key: 'custom', label: t('reports.custom') }
+])
 
 function getDateRange(period: string): { from: string, to: string } {
     const now = new Date()
@@ -317,7 +319,7 @@ onMounted(() => {
     padding: var(--space-sm) var(--space-md);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    background: var(--color-bg-input);
+    background: var(--color-bg-glass);
     color: var(--color-text-primary);
     font-family: inherit;
     font-size: 0.9rem;
@@ -460,7 +462,7 @@ onMounted(() => {
 
 .bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-error), rgba(239, 68, 68, 0.7));
+    background: linear-gradient(90deg, var(--color-error), var(--color-error-bg));
     border-radius: var(--radius-sm);
     transition: width 0.4s ease;
     min-width: 2px;

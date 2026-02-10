@@ -40,10 +40,10 @@
     "entities": "Entità",
     "categories": "Categorie",
     "payees": "Beneficiari",
-    "vehicles": "Veicoli",
     "maintenance": "Manutenzioni",
     "scheduled": "Programmate",
-    "alerts": "Avvisi Manutenzione"
+    "alerts": "Avvisi Manutenzione",
+    "reports": "Report"
   },
   "login": {
     "title": "Financisto Drive",
@@ -228,7 +228,11 @@
     "purchaseDate": "Data Acquisto",
     "purchasePrice": "Prezzo Acquisto",
     "createVehicle": "Crea Veicolo",
-    "brandModelRequired": "Marca e modello sono richiesti"
+    "brandModelRequired": "Marca e modello sono richiesti",
+    "transactions": "Transazioni",
+    "noTransactions": "Nessuna transazione",
+    "scrollToLoad": "Scorri per caricare",
+    "thisYear": "Quest'anno"
   },
   "maintenance": {
     "title": "Manutenzioni",
@@ -458,5 +462,23 @@
   },
   "user": {
     "defaultName": "Utente"
+  },
+  "reports": {
+    "title": "Report",
+    "thisMonth": "Questo mese",
+    "lastMonth": "Mese scorso",
+    "thisYear": "Quest'anno",
+    "lastYear": "Anno scorso",
+    "custom": "Personalizzato",
+    "from": "Da",
+    "to": "A",
+    "noTransactions": "Nessuna transazione in questo periodo",
+    "income": "Entrate",
+    "expenses": "Spese",
+    "balance": "Saldo",
+    "expensesByCategory": "Spese per categoria",
+    "categoryDetails": "Dettaglio per categoria",
+    "category": "Categoria",
+    "total": "Totale"
   }
 }
