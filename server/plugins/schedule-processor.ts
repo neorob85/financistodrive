@@ -1,3 +1,5 @@
+import { sendPushNotification } from '../utils/push'
+
 const INTERVAL_MS = 60 * 1000 // Every minute
 
 function calculateNextDate(currentDate: Date, frequency: string): Date {
@@ -110,6 +112,45 @@ async function processSchedules() {
                 }
 
                 console.log(`[schedule-processor] Created transaction from schedule #${schedule.id} "${schedule.title}" for user #${schedule.user_id}`)
+
+                // Send push notification to the user
+                try {
+                    const subs = await pool.query(
+                        'SELECT endpoint, keys_p256dh, keys_auth FROM push_subscriptions WHERE user_id = ?',
+                        [schedule.user_id]
+                    )
+
+                    if (subs && subs.length > 0) {
+                        const amount = Math.abs(parseFloat(schedule.amount_from))
+                        const sign = schedule.amount_from < 0 ? '-' : '+'
+                        const payload = {
+                            title: 'Transazione programmata',
+                            body: `${schedule.title}: ${sign}€${amount.toFixed(2)}`,
+                            url: '/transactions',
+                            icon: '/pwa-192x192.png',
+                            tag: `schedule-${schedule.id}`
+                        }
+
+                        for (const sub of subs as any[]) {
+                            try {
+                                const pushResult = await sendPushNotification(
+                                    { endpoint: sub.endpoint, keys: { p256dh: sub.keys_p256dh, auth: sub.keys_auth } },
+                                    payload
+                                )
+                                if (!pushResult.success) {
+                                    const statusCode = (pushResult.error as any)?.statusCode || (pushResult.error as any)?.status
+                                    if (statusCode === 410 || statusCode === 404) {
+                                        await pool.query('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?', [sub.endpoint, schedule.user_id])
+                                    }
+                                }
+                            } catch (pushErr) {
+                                // Don't fail the schedule processing if push fails
+                            }
+                        }
+                    }
+                } catch (pushErr) {
+                    console.error(`[schedule-processor] Push notification error for schedule #${schedule.id}:`, (pushErr as any).message)
+                }
             } catch (err: any) {
                 console.error(`[schedule-processor] Error processing schedule #${schedule.id}:`, err.message)
             }
@@ -134,3 +175,4 @@ export default defineNitroPlugin(() => {
     // Cleanup on shutdown
     process.on('beforeExit', () => clearInterval(interval))
 })
+

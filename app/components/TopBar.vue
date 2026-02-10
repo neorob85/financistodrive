@@ -59,6 +59,11 @@
 
       <!-- Right group: Entities menu -->
       <div class="top-bar-right">
+        <NuxtLink to="/reports" class="dashboard-link" title="Report">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 20V10M12 20V4M6 20v-6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </NuxtLink>
         <div class="archives-menu-container">
           <button class="archives-trigger" @click="toggleArchivesMenu" :title="$t('nav.entities')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
