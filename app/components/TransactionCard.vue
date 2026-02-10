@@ -16,6 +16,7 @@
         <span v-if="transaction.categoryTitle" class="tx-category">{{ transaction.categoryTitle }}</span>
         <span v-if="transaction.vehicleName" class="tx-badge">🚗 {{ transaction.vehicleName }}</span>
         <span v-if="transaction.odometer" class="tx-badge">🛣️ {{ transaction.odometer }} km</span>
+        <span v-if="transaction.logType === 'fuel' && transaction.averageConsumption" class="tx-badge tx-consumption-badge">⛽ {{ transaction.averageConsumption }} km/L</span>
       </div>
     </div>
 
@@ -38,6 +39,8 @@ interface Transaction {
   toAccountId?: number | null
   vehicleName?: string | null
   odometer?: number | null
+  logType?: string | null
+  averageConsumption?: number | null
 }
 
 const props = defineProps<{
@@ -198,6 +201,12 @@ const txTime = computed(() => {
   background: var(--color-bg-glass);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
+}
+
+.tx-consumption-badge {
+  background: var(--color-accent-bg, rgba(99, 102, 241, 0.12));
+  color: var(--color-accent, #6366f1);
+  font-weight: 600;
 }
 
 .tx-amount {

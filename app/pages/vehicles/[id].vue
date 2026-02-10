@@ -241,6 +241,13 @@
                 :transaction="detailTransaction" @close="closeDetail" @edit="editTransaction"
                 @delete="deleteTransaction" />
         </div>
+
+        <!-- FAB for new automotive transaction -->
+        <button v-if="vehicle" class="fab-btn" @click="createAutomotiveTransaction" title="Nuova spesa auto">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+        </button>
     </div>
 
 </template>
@@ -307,6 +314,7 @@ interface VehicleTransaction {
     logType: string
     vehicleName?: string | null
     odometer?: number | null
+    averageConsumption?: number | null
 }
 
 interface TransactionChild {
@@ -649,6 +657,10 @@ onMounted(async () => {
         loadTransactions()
     }
 })
+
+function createAutomotiveTransaction() {
+    router.push(`/transactions/automotive?vehicleId=${vehicleId.value}`)
+}
 </script>
 
 <style scoped>
@@ -1095,5 +1107,34 @@ onMounted(async () => {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* FAB */
+.fab-btn {
+    position: fixed;
+    bottom: calc(70px + var(--space-lg));
+    right: var(--space-lg);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary, #818cf8));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 50;
+}
+
+.fab-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+}
+
+.fab-btn:active {
+    transform: scale(0.95);
 }
 </style>

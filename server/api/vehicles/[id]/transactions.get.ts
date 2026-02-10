@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
                         c.title AS categoryTitle,
                         a.title AS accountTitle,
                         GREATEST(COALESCE(MAX(fl.odometer), 0), COALESCE(MAX(ml.odometer), 0)) AS odometer,
+                        MAX(fl.average_consumption) AS averageConsumption,
                         CASE
                             WHEN COUNT(fl.id) > 0 THEN 'fuel'
                             WHEN COUNT(ml.id) > 0 THEN 'maintenance'
@@ -77,7 +78,8 @@ export default defineEventHandler(async (event) => {
             categoryTitle: r.categoryTitle || undefined,
             accountTitle: r.accountTitle,
             logType: r.logType,
-            odometer: r.odometer > 0 ? Number(r.odometer) : null
+            odometer: r.odometer > 0 ? Number(r.odometer) : null,
+            averageConsumption: r.averageConsumption ? Math.round(parseFloat(r.averageConsumption) * 100) / 100 : null
         }))
 
         return { transactions }

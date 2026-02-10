@@ -275,6 +275,10 @@ interface MaintenanceType {
 }
 
 const router = useRouter()
+const route = useRoute()
+
+// Read vehicleId from query params (when coming from vehicle detail page)
+const queryVehicleId = computed(() => route.query.vehicleId ? Number(route.query.vehicleId) : null)
 
 const activeTab = ref<'fuel' | 'maintenance'>('fuel')
 
@@ -436,7 +440,11 @@ const flatCategories = computed(() => {
 })
 
 function goBack() {
-    router.push('/transactions')
+    if (queryVehicleId.value) {
+        router.push(`/vehicles/${queryVehicleId.value}`)
+    } else {
+        router.push('/transactions')
+    }
 }
 
 async function handleSubmit() {
@@ -525,7 +533,11 @@ async function handleSubmit() {
             })
         }
 
-        router.push('/transactions')
+        if (queryVehicleId.value) {
+            router.push(`/vehicles/${queryVehicleId.value}`)
+        } else {
+            router.push('/transactions')
+        }
     } catch (error: any) {
         formError.value = error?.data?.message || 'Errore nel salvataggio'
     } finally {
@@ -565,17 +577,23 @@ async function loadDropdownData() {
         fuels.value = fuelsData.fuels || []
         maintenanceTypes.value = maintenanceTypesData.maintenanceTypes || []
 
-        // Auto-select first vehicle and set odometer
-        if (vehicles.value.length > 0) {
+        // Auto-select vehicle from query param or first vehicle
+        if (queryVehicleId.value) {
+            const qVehicle = vehicles.value.find(v => v.id === queryVehicleId.value)
+            if (qVehicle) {
+                form.value.vehicleId = qVehicle.id
+                form.value.odometer = qVehicle.currentMileage || 0
+            }
+        } else if (vehicles.value.length > 0) {
             form.value.vehicleId = vehicles.value[0].id
             form.value.odometer = vehicles.value[0].currentMileage || 0
         }
 
         // Auto-select fuel type based on vehicle
-        if (vehicles.value.length > 0 && fuels.value.length > 0) {
-            const vehicle = vehicles.value[0] as any
-            if (vehicle.fuelId) {
-                form.value.fuelTypeId = vehicle.fuelId
+        if (fuels.value.length > 0) {
+            const selectedVehicle = vehicles.value.find(v => v.id === form.value.vehicleId) as any
+            if (selectedVehicle?.fuelId) {
+                form.value.fuelTypeId = selectedVehicle.fuelId
             }
         }
     } catch (error) {
