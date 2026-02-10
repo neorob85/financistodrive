@@ -9,6 +9,7 @@ SELECT
   t.transaction_date AS transactionDate,
   t.to_account_id AS toAccountId,
   t.is_transfer AS isTransfer,
+  t.is_automotive AS isAutomotive,
   c.title AS categoryTitle,
   a.title AS accountTitle,
   CASE
@@ -16,10 +17,25 @@ SELECT
     WHEN EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id) THEN
       COALESCE((SELECT SUM(ch.amount_from) FROM transactions ch WHERE ch.parent_id = t.id AND ch.is_transfer = 0), 0)
     ELSE t.amount_from
-  END AS balanceAmount
+  END AS balanceAmount,
+  -- Automotive info
+  COALESCE(fl.odometer, ml.odometer) as odometer,
+  COALESCE(v_fuel.brand, v_maint.brand) as vehicleBrand,
+  COALESCE(v_fuel.model, v_maint.model) as vehicleModel
 FROM transactions t
 LEFT JOIN categories c ON t.category_id = c.id
 LEFT JOIN accounts a ON t.from_account_id = a.id
+-- Join for Fuel Logs
+LEFT JOIN fuels_logs fl ON t.id = fl.transaction_id
+LEFT JOIN vehicles v_fuel ON fl.vehicle_id = v_fuel.id
+-- Join for Maintenance Logs (use subquery to ensure 1:1)
+LEFT JOIN (
+  SELECT transaction_id, MAX(vehicle_id) as vehicle_id, MAX(odometer) as odometer 
+  FROM maintenances_logs 
+  GROUP BY transaction_id
+) ml ON t.id = ml.transaction_id
+LEFT JOIN vehicles v_maint ON ml.vehicle_id = v_maint.id
+
 WHERE t.user_id = ? 
   AND t.parent_id IS NULL
   AND (t.from_account_id = ? OR t.to_account_id = ?)

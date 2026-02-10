@@ -14,6 +14,8 @@
         <span class="tx-badge">{{ txTime }}</span>
         <span class="tx-badge">{{ transaction.accountTitle }}</span>
         <span v-if="transaction.categoryTitle" class="tx-category">{{ transaction.categoryTitle }}</span>
+        <span v-if="transaction.vehicleName" class="tx-badge">🚗 {{ transaction.vehicleName }}</span>
+        <span v-if="transaction.odometer" class="tx-badge">🛣️ {{ transaction.odometer }} km</span>
       </div>
     </div>
 
@@ -34,6 +36,8 @@ interface Transaction {
   categoryTitle?: string | null
   accountTitle: string
   toAccountId?: number | null
+  vehicleName?: string | null
+  odometer?: number | null
 }
 
 const props = defineProps<{

@@ -31,14 +31,18 @@
                     </div>
                     <div class="title-badges">
                         <span v-if="vehicle.alertsOverdue > 0" class="alert-badge overdue">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                             </svg>
                             {{ vehicle.alertsOverdue }} scadute
                         </span>
                         <span v-if="vehicle.alertsUpcoming > 0" class="alert-badge upcoming">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                             </svg>
                             {{ vehicle.alertsUpcoming }} in scadenza
                         </span>
@@ -61,7 +65,8 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Km percorsi</span>
-                        <span class="stat-value">{{ vehicle.kmDriven > 0 ? formatNumber(vehicle.kmDriven) + ' km' : '—' }}</span>
+                        <span class="stat-value">{{ vehicle.kmDriven > 0 ? formatNumber(vehicle.kmDriven) + ' km' : '—'
+                            }}</span>
                     </div>
                 </div>
 
@@ -69,7 +74,8 @@
                     <h3 class="section-title">Consumo</h3>
                     <div class="stat-row">
                         <span class="stat-label">Consumo medio</span>
-                        <span class="stat-value">{{ vehicle.avgConsumption != null ? vehicle.avgConsumption + ' km/L' : '—' }}</span>
+                        <span class="stat-value">{{ vehicle.avgConsumption != null ? vehicle.avgConsumption + ' km/L' :
+                            '—' }}</span>
                     </div>
                 </div>
 
@@ -97,11 +103,13 @@
                     <h3 class="section-title">Costo per km</h3>
                     <div class="stat-row">
                         <span class="stat-label">Gestione</span>
-                        <span class="stat-value">{{ vehicle.runningCostPerKm != null ? '€ ' + vehicle.runningCostPerKm.toFixed(3) : '—' }}</span>
+                        <span class="stat-value">{{ vehicle.runningCostPerKm != null ? '€ ' +
+                            vehicle.runningCostPerKm.toFixed(3) : '—' }}</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Totale (con acquisto)</span>
-                        <span class="stat-value">{{ vehicle.costPerKm != null ? '€ ' + vehicle.costPerKm.toFixed(3) : '—' }}</span>
+                        <span class="stat-value">{{ vehicle.costPerKm != null ? '€ ' + vehicle.costPerKm.toFixed(3) :
+                            '—' }}</span>
                     </div>
                 </div>
             </div>
@@ -110,13 +118,16 @@
             <div v-if="overdueAlerts.length > 0" class="alerts-section">
                 <h3 class="section-title-lg alerts-header overdue-header">⚠️ Manutenzioni scadute</h3>
                 <div class="alerts-list">
-                    <div v-for="a in overdueAlerts" :key="a.id" class="alert-item overdue" @click="router.push('/alerts')">
+                    <div v-for="a in overdueAlerts" :key="a.id" class="alert-item overdue"
+                        @click="router.push('/alerts')">
                         <div class="alert-icon-circle overdue">⚠️</div>
                         <div class="alert-item-info">
                             <div class="alert-item-title">{{ a.maintenanceTypeTitle }}</div>
                             <div class="alert-item-meta">
-                                <span v-if="a.nextMaintenanceDate" class="alert-meta-tag">{{ formatDate(a.nextMaintenanceDate) }}</span>
-                                <span v-if="a.nextMaintenanceOdometer" class="alert-meta-tag km">→ {{ formatNumber(a.nextMaintenanceOdometer) }} km</span>
+                                <span v-if="a.nextMaintenanceDate" class="alert-meta-tag">{{
+                                    formatDate(a.nextMaintenanceDate) }}</span>
+                                <span v-if="a.nextMaintenanceOdometer" class="alert-meta-tag km">→ {{
+                                    formatNumber(a.nextMaintenanceOdometer) }} km</span>
                             </div>
                         </div>
                         <div class="alert-item-countdown overdue">
@@ -125,7 +136,8 @@
                                 <span class="countdown-lbl">giorni</span>
                             </template>
                             <template v-else-if="a.nextMaintenanceOdometer && a.currentMileage">
-                                <span class="countdown-val">{{ formatNumber(a.nextMaintenanceOdometer - a.currentMileage) }}</span>
+                                <span class="countdown-val">{{ formatNumber(a.nextMaintenanceOdometer -
+                                    a.currentMileage) }}</span>
                                 <span class="countdown-lbl">km</span>
                             </template>
                         </div>
@@ -136,13 +148,17 @@
             <div v-if="upcomingAlerts.length > 0" class="alerts-section">
                 <h3 class="section-title-lg alerts-header upcoming-header">🔔 Manutenzioni in scadenza</h3>
                 <div class="alerts-list">
-                    <div v-for="a in upcomingAlerts" :key="a.id" class="alert-item upcoming" @click="router.push('/alerts')">
+                    <div v-for="a in upcomingAlerts" :key="a.id" class="alert-item upcoming"
+                        @click="router.push('/alerts')">
                         <div class="alert-icon-circle upcoming">🔔</div>
                         <div class="alert-item-info">
                             <div class="alert-item-title">{{ a.maintenanceTypeTitle }}</div>
                             <div class="alert-item-meta">
-                                <span v-if="a.nextMaintenanceDate" class="alert-meta-tag">{{ formatDate(a.nextMaintenanceDate) }}</span>
-                                <span v-if="a.nextMaintenanceOdometer" class="alert-meta-tag km">→ {{ formatNumber(a.nextMaintenanceOdometer) }} km</span>
+                                <span v-if="a.nextMaintenanceDate" class="alert-meta-tag">{{
+                                    formatDate(a.nextMaintenanceDate)
+                                    }}</span>
+                                <span v-if="a.nextMaintenanceOdometer" class="alert-meta-tag km">→ {{
+                                    formatNumber(a.nextMaintenanceOdometer) }} km</span>
                             </div>
                         </div>
                         <div class="alert-item-countdown upcoming">
@@ -151,7 +167,8 @@
                                 <span class="countdown-lbl">giorni</span>
                             </template>
                             <template v-else-if="a.nextMaintenanceOdometer && a.currentMileage">
-                                <span class="countdown-val">{{ formatNumber(a.nextMaintenanceOdometer - a.currentMileage) }}</span>
+                                <span class="countdown-val">{{ formatNumber(a.nextMaintenanceOdometer -
+                                    a.currentMileage) }}</span>
                                 <span class="countdown-lbl">km</span>
                             </template>
                         </div>
@@ -163,27 +180,28 @@
             <div v-if="consumptionPoints.length >= 2" class="chart-section glass-card">
                 <h3 class="section-title">Andamento consumo medio</h3>
                 <div class="chart-wrapper">
-                    <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="consumption-chart" preserveAspectRatio="none">
+                    <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="consumption-chart"
+                        preserveAspectRatio="none">
                         <!-- Grid lines -->
-                        <line v-for="i in 4" :key="'grid-' + i"
-                            :x1="chartPadding.left" :x2="chartWidth - chartPadding.right"
+                        <line v-for="i in 4" :key="'grid-' + i" :x1="chartPadding.left"
+                            :x2="chartWidth - chartPadding.right"
                             :y1="chartPadding.top + ((i - 1) / 3) * chartInnerHeight"
-                            :y2="chartPadding.top + ((i - 1) / 3) * chartInnerHeight"
-                            stroke="var(--color-border)" stroke-width="0.5" stroke-dasharray="4,4" />
+                            :y2="chartPadding.top + ((i - 1) / 3) * chartInnerHeight" stroke="var(--color-border)"
+                            stroke-width="0.5" stroke-dasharray="4,4" />
 
                         <!-- Area fill -->
                         <path :d="areaPath" fill="url(#consumptionGradient)" opacity="0.3" />
 
                         <!-- Line -->
-                        <path :d="linePath" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path :d="linePath" fill="none" stroke="var(--color-accent)" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
 
                         <!-- Trend line -->
                         <line :x1="trendLine.x1" :y1="trendLine.y1" :x2="trendLine.x2" :y2="trendLine.y2"
                             stroke="var(--color-text-muted)" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6" />
 
                         <!-- Data points -->
-                        <circle v-for="(p, i) in chartPoints" :key="'point-' + i"
-                            :cx="p.x" :cy="p.y" r="3"
+                        <circle v-for="(p, i) in chartPoints" :key="'point-' + i" :cx="p.x" :cy="p.y" r="3"
                             fill="var(--color-accent)" stroke="var(--color-bg-card)" stroke-width="1.5" />
 
                         <defs>
@@ -213,16 +231,18 @@
                     Nessuna transazione
                 </div>
                 <div v-else class="transactions-list">
-                    <TransactionCard
-                        v-for="tx in transactions"
-                        :key="tx.id"
-                        :transaction="tx"
-                        @click="router.push(`/transactions/${tx.id}`)"
-                    />
+                    <TransactionCard v-for="tx in transactions" :key="tx.id" :transaction="tx"
+                        @click="openDetail(tx.id)" />
                 </div>
             </div>
+
+            <!-- Transaction Detail Modal -->
+            <TransactionDetailModal :show="showDetail" :loading="loadingDetail" :error="detailError"
+                :transaction="detailTransaction" @close="closeDetail" @edit="editTransaction"
+                @delete="deleteTransaction" />
         </div>
     </div>
+
 </template>
 
 <script setup lang="ts">
@@ -285,6 +305,83 @@ interface VehicleTransaction {
     categoryTitle?: string
     accountTitle: string
     logType: string
+    vehicleName?: string | null
+    odometer?: number | null
+}
+
+interface TransactionChild {
+    id: number
+    title: string
+    amountFrom: number
+    amountTo: number | null
+    categoryId: number | null
+    categoryTitle: string | null
+    toAccountId: number | null
+    toAccountTitle: string | null
+    isTransfer: boolean
+}
+
+interface TransactionAttachment {
+    id: number
+    filePath: string
+}
+
+interface TransactionDetail {
+    id: number
+    title: string
+    amountFrom: number
+    amountTo: number | null
+    transactionDate: string
+    fromAccountId: number
+    fromAccountTitle: string
+    toAccountId: number | null
+    toAccountTitle: string | null
+    categoryId: number | null
+    categoryTitle: string | null
+    projectId: number | null
+    projectTitle: string | null
+    payeeId: number | null
+    payeeTitle: string | null
+    currencyCode: string
+    currencySymbol: string
+    notes: string | null
+    isTransfer: boolean
+    isAutomotive: boolean
+    parentId: number | null
+    transactionType: 'income' | 'expense' | 'transfer' | 'split'
+    isSplit: boolean
+    children: TransactionChild[]
+    attachments: TransactionAttachment[]
+    fuelLog?: {
+        id: number
+        vehicleId: number
+        vehicleName: string
+        licensePlate: string
+        date: string
+        odometer: number
+        fuelVolume: number
+        fuelPricePerUnit: number
+        totalCost: number
+        isFullTank: boolean
+        fuelTypeId: number
+        fuelTypeName: string
+        averageConsumption: number | null
+        distanceSinceLastRefuel: number | null
+        notes: string | null
+    }
+    maintenanceLogs?: {
+        id: number
+        vehicleId?: number
+        vehicleName?: string
+        licensePlate?: string
+        date?: string
+        odometer?: number
+        maintenanceTypeId: number | null
+        maintenanceTypeName: string | null
+        description: string
+        amount: number
+        notes?: string | null
+    }[]
 }
 
 const vehicleId = computed(() => route.params.id as string)
@@ -295,6 +392,12 @@ const consumptionPoints = ref<ConsumptionPoint[]>([])
 const vehicleAlerts = ref<VehicleAlert[]>([])
 const transactions = ref<VehicleTransaction[]>([])
 const loadingTransactions = ref(true)
+
+// Detail modal
+const showDetail = ref(false)
+const loadingDetail = ref(false)
+const detailError = ref('')
+const detailTransaction = ref<TransactionDetail | null>(null)
 
 function formatNumber(n: number): string {
     return n.toLocaleString('it-IT')
@@ -465,6 +568,76 @@ async function loadTransactions() {
         // silently ignore
     } finally {
         loadingTransactions.value = false
+    }
+}
+
+// Open detail modal
+async function openDetail(txId: number) {
+    showDetail.value = true
+    loadingDetail.value = true
+    detailError.value = ''
+    detailTransaction.value = null
+
+    try {
+        const result = await $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${txId}`)
+        detailTransaction.value = result.transaction
+    } catch (error: any) {
+        console.error('Failed to fetch transaction details:', error)
+        detailError.value = error?.data?.message || 'Errore nel caricamento'
+    } finally {
+        loadingDetail.value = false
+    }
+}
+
+function closeDetail() {
+    showDetail.value = false
+    detailTransaction.value = null
+}
+
+function editTransaction() {
+    if (detailTransaction.value) {
+        const txId = detailTransaction.value.id
+        const isAutomotive = detailTransaction.value.isAutomotive
+        const hasFuelLog = !!detailTransaction.value.fuelLog
+        const hasMaintenanceLogs = detailTransaction.value.maintenanceLogs && detailTransaction.value.maintenanceLogs.length > 0
+
+        closeDetail()
+
+        if (isAutomotive) {
+            if (hasFuelLog) {
+                router.push(`/transactions/${txId}/edit-fuel`)
+                return
+            }
+            if (hasMaintenanceLogs) {
+                router.push(`/transactions/${txId}/edit-maintenance`)
+                return
+            }
+        }
+
+        router.push(`/transactions/${txId}/edit`)
+    }
+}
+
+// Delete transaction
+async function deleteTransaction() {
+    const tx = detailTransaction.value
+    if (!tx) return
+
+    if (!confirm('Sei sicuro di voler eliminare questa transazione?')) return
+
+    try {
+        await $fetch(`/api/transactions/${tx.id}`, {
+            method: 'DELETE'
+        })
+        closeDetail()
+        // Refresh list
+        loadVehicle()
+        loadTransactions()
+        loadConsumption()
+        loadAlerts()
+    } catch (error) {
+        console.error('Failed to delete transaction:', error)
+        alert('Errore durante l\'eliminazione della transazione')
     }
 }
 
@@ -653,7 +826,7 @@ onMounted(async () => {
     padding: var(--space-sm) 0;
 }
 
-.stat-row + .stat-row {
+.stat-row+.stat-row {
     border-top: 1px solid var(--color-border);
 }
 
@@ -919,6 +1092,8 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

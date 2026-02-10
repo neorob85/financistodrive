@@ -64,6 +64,8 @@ interface Transaction {
   categoryTitle?: string
   accountTitle: string
   balanceAmount: number
+  vehicleName?: string | null
+  odometer?: number | null
 }
 
 interface TransactionChild {

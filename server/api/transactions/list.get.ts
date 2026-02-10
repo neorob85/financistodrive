@@ -72,7 +72,10 @@ export default defineEventHandler(async (event) => {
                 toAccountId: tx.toAccountId,
                 categoryTitle: tx.categoryTitle,
                 accountTitle: tx.accountTitle,
-                balanceAmount: Number(tx.balanceAmount)
+                balanceAmount: Number(tx.balanceAmount),
+                isAutomotive: !!tx.isAutomotive,
+                odometer: tx.odometer ? Number(tx.odometer) : null,
+                vehicleName: (tx.vehicleBrand || tx.vehicleModel) ? `${tx.vehicleBrand || ''} ${tx.vehicleModel || ''}`.trim() : null
             })),
             pagination: {
                 page,

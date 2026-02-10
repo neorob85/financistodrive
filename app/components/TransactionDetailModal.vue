@@ -39,9 +39,9 @@
                 <div class="type-badge" :class="transaction.transactionType">
                     <span v-if="transaction.transactionType === 'income'">📈 {{ $t('transactions.income') }}</span>
                     <span v-else-if="transaction.transactionType === 'expense'">📉 {{ $t('transactions.expense')
-                        }}</span>
+                    }}</span>
                     <span v-else-if="transaction.transactionType === 'transfer'">🔄 {{ $t('transactions.transfer')
-                        }}</span>
+                    }}</span>
                     <span v-else-if="transaction.transactionType === 'split'">📊 {{ $t('transactions.split') }}</span>
                 </div>
 
@@ -77,7 +77,7 @@
                         class="detail-row">
                         <span class="label">{{ $t('transactions.amountReceived') }}</span>
                         <span class="value success">{{ formatAmount(transaction.amountTo, transaction.currencySymbol)
-                            }}</span>
+                        }}</span>
                     </div>
 
                     <!-- Category (only if not split) -->
@@ -151,8 +151,9 @@
                 <div v-if="transaction.maintenanceLogs && transaction.maintenanceLogs.length > 0"
                     class="automotive-section">
                     <h4>🔧 {{ $t('automotive.maintenanceDetails') }}</h4>
-                    <div class="automotive-grid">
-                        <!-- Vehicle info from first item -->
+
+                    <!-- Vehicle info header -->
+                    <div class="maint-vehicle-header">
                         <div class="auto-row">
                             <span class="label">{{ $t('automotive.vehicle') }}</span>
                             <span class="value">{{ transaction.maintenanceLogs?.[0]?.vehicleName }} ({{
@@ -166,7 +167,7 @@
                     </div>
 
                     <!-- Maintenance items list -->
-                    <div class="maintenance-items-list">
+                    <div class="maint-items-container">
                         <div v-for="item in transaction.maintenanceLogs" :key="item.id" class="maint-item">
                             <div class="maint-info">
                                 <span class="maint-type" v-if="item.maintenanceTypeName">{{ item.maintenanceTypeName
@@ -182,7 +183,7 @@
                     <div class="maint-total">
                         <span class="label">{{ $t('common.total') }}</span>
                         <span class="value">€ {{transaction.maintenanceLogs.reduce((sum, it) => sum + (it.amount || 0),
-                            0).toFixed(2)}}</span>
+                            0).toFixed(2) }}</span>
                     </div>
                 </div>
 
@@ -194,7 +195,7 @@
                             <div class="split-info">
                                 <span class="split-category">
                                     {{ child.isTransfer ? '🔄 ' + $t('transactions.transfer') : (child.categoryTitle ||
-                                    $t('transactions.noCategory')) }}
+                                        $t('transactions.noCategory')) }}
                                 </span>
                                 <span v-if="child.isTransfer && child.toAccountTitle" class="split-destination">
                                     → {{ child.toAccountTitle }}
@@ -484,10 +485,10 @@ function getFileName(path: string) {
 
 .automotive-section {
     margin-top: var(--space-md);
-    padding: var(--space-md);
+    padding: var(--space-lg);
     background: var(--color-accent-bg);
-    border: 1px solid var(--color-accent-bg);
-    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
+    border-radius: var(--radius-lg);
 }
 
 .automotive-section h4 {
@@ -509,11 +510,104 @@ function getFileName(path: string) {
     font-size: 0.85rem;
 }
 
+.auto-row .label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.auto-row .value {
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
 .auto-row.highlight {
     margin-top: var(--space-xs);
     padding-top: var(--space-xs);
-    border-top: 1px solid var(--color-accent-bg);
+    border-top: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
     font-weight: 600;
+}
+
+/* Maintenance vehicle header */
+.maint-vehicle-header {
+    display: grid;
+    gap: var(--space-sm);
+    padding-bottom: var(--space-md);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+/* Maintenance items */
+.maint-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.maint-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    transition: transform 0.15s;
+}
+
+.maint-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.maint-type {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.maint-type.generic {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.maint-desc {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.maint-amount {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-error);
+    white-space: nowrap;
+    margin-left: var(--space-md);
+}
+
+/* Maintenance total */
+.maint-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+.maint-total .label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.maint-total .value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-accent);
 }
 
 .split-section {

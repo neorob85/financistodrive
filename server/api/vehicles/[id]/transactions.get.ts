@@ -35,9 +35,10 @@ export default defineEventHandler(async (event) => {
                         t.to_account_id AS toAccountId,
                         c.title AS categoryTitle,
                         a.title AS accountTitle,
+                        GREATEST(COALESCE(MAX(fl.odometer), 0), COALESCE(MAX(ml.odometer), 0)) AS odometer,
                         CASE
-                            WHEN fl.id IS NOT NULL THEN 'fuel'
-                            WHEN ml.id IS NOT NULL THEN 'maintenance'
+                            WHEN COUNT(fl.id) > 0 THEN 'fuel'
+                            WHEN COUNT(ml.id) > 0 THEN 'maintenance'
                             ELSE 'other'
                         END AS logType
                  FROM transactions t
@@ -46,6 +47,7 @@ export default defineEventHandler(async (event) => {
                  LEFT JOIN fuels_logs fl ON fl.transaction_id = t.id AND fl.vehicle_id = ?
                  LEFT JOIN maintenances_logs ml ON ml.transaction_id = t.id AND ml.vehicle_id = ?
                  WHERE t.user_id = ? AND (fl.id IS NOT NULL OR ml.id IS NOT NULL)
+                 GROUP BY t.id
                  ORDER BY t.transaction_date DESC`,
                 [vehicleId, vehicleId, result.userId]
             )
@@ -74,7 +76,8 @@ export default defineEventHandler(async (event) => {
             toAccountId: r.toAccountId || undefined,
             categoryTitle: r.categoryTitle || undefined,
             accountTitle: r.accountTitle,
-            logType: r.logType
+            logType: r.logType,
+            odometer: r.odometer > 0 ? Number(r.odometer) : null
         }))
 
         return { transactions }
