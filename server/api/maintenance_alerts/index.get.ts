@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,9 +14,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('maintenance_alerts/get_all_alerts.sql')
-        const rows = await pool.query(sql, [result.userId])
+
+        const rows = await withConnection(async (conn) => {
+            return await conn.query(sql, [result.userId])
+        })
 
         const alerts = (rows as any[]).map((row: any) => ({
             id: row.id,

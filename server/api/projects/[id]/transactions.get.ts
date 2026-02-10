@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,19 +19,22 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        // Verify project belongs to user
-        const [project] = await pool.query(
-            `SELECT id, title, budget FROM projects WHERE id = ? AND user_id = ?`,
-            [projectId, result.userId]
-        )
-        if (!project) {
-            throw createError({ statusCode: 404, message: 'Progetto non trovato' })
-        }
-
         const sql = await loadSql('projects/get_project_transactions.sql')
-        const rows = await pool.query(sql, [projectId, result.userId])
+
+        const data = await withConnection(async (conn) => {
+            // Verify project belongs to user
+            const [project] = await conn.query(
+                `SELECT id, title, budget FROM projects WHERE id = ? AND user_id = ?`,
+                [projectId, result.userId]
+            )
+            if (!project) {
+                throw createError({ statusCode: 404, message: 'Progetto non trovato' })
+            }
+
+            const rows = await conn.query(sql, [projectId, result.userId])
+
+            return { project, rows }
+        })
 
         // Format date as local string to prevent UTC conversion during JSON serialization
         function formatLocalDate(date: Date | string): string {
@@ -44,7 +49,7 @@ export default defineEventHandler(async (event) => {
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
         }
 
-        const transactions = (rows as any[]).map((r: any) => ({
+        const transactions = (data.rows as any[]).map((r: any) => ({
             id: r.id,
             title: r.title,
             amountFrom: parseFloat(r.amountFrom),
@@ -57,9 +62,9 @@ export default defineEventHandler(async (event) => {
 
         return {
             project: {
-                id: project.id,
-                title: project.title,
-                budget: project.budget !== null ? Number(project.budget) : null
+                id: data.project.id,
+                title: data.project.title,
+                budget: data.project.budget !== null ? Number(data.project.budget) : null
             },
             transactions
         }

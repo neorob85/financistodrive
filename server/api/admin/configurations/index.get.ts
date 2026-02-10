@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,20 +14,20 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const configurations = await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            const rows = await conn.query('SELECT id, config_key, config_value FROM configurations ORDER BY config_key')
 
-        const rows = await pool.query('SELECT id, config_key, config_value FROM configurations ORDER BY config_key')
-
-        const configurations = (rows as any[]).map((row: any) => ({
-            id: row.id,
-            key: row.config_key,
-            value: row.config_value
-        }))
+            return (rows as any[]).map((row: any) => ({
+                id: row.id,
+                key: row.config_key,
+                value: row.config_value
+            }))
+        })
 
         return { configurations }
     } catch (error: any) {

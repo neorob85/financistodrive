@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,9 +14,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('configurations/get_user_language.sql')
-        const rows = await pool.query(sql, [result.userId])
+
+        const rows = await withConnection(async (conn) => {
+            return await conn.query(sql, [result.userId])
+        })
 
         const language = rows && rows.length > 0 ? rows[0].config_value : 'it'
 

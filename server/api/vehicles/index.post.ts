@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -19,23 +21,24 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-        const insertResult = await pool.query(
-            `INSERT INTO vehicles (user_id, brand, model, license_plate, year, fuel_id, initial_mileage, current_mileage, notes, is_active)
+        const insertResult = await withConnection(async (conn) => {
+            return await conn.query(
+                `INSERT INTO vehicles (user_id, brand, model, license_plate, year, fuel_id, initial_mileage, current_mileage, notes, is_active)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                result.userId,
-                brand,
-                model,
-                licensePlate || null,
-                year || null,
-                fuelId || null,
-                initialMileage || 0,
-                initialMileage || 0,
-                notes || null,
-                isActive !== false ? 1 : 0
-            ]
-        )
+                [
+                    result.userId,
+                    brand,
+                    model,
+                    licensePlate || null,
+                    year || null,
+                    fuelId || null,
+                    initialMileage || 0,
+                    initialMileage || 0,
+                    notes || null,
+                    isActive !== false ? 1 : 0
+                ]
+            )
+        })
 
         return { success: true, id: Number(insertResult.insertId) }
     } catch (error: any) {

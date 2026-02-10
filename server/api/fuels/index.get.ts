@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,8 +14,9 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-        const rows = await pool.query('SELECT id, title FROM fuels ORDER BY title')
+        const rows = await withConnection(async (conn) => {
+            return await conn.query('SELECT id, title FROM fuels ORDER BY title')
+        })
 
         const fuels = (rows as any[]).map((row: any) => ({
             id: row.id,

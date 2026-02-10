@@ -1,4 +1,4 @@
-import { getPool } from '../../utils/db'
+import { withConnection } from '../../utils/db'
 
 export default defineEventHandler(async (event) => {
     // We might not need full auth here if we just unsubscribe by endpoint, 
@@ -25,9 +25,10 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-        // We delete by endpoint AND user_id to ensure users only delete their own subscriptions
-        await pool.query('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?', [body.endpoint, result.userId])
+        await withConnection(async (conn) => {
+            // We delete by endpoint AND user_id to ensure users only delete their own subscriptions
+            await conn.query('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?', [body.endpoint, result.userId])
+        })
 
         return { success: true }
     } catch (error: any) {

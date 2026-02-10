@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,18 +14,19 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+        await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
+        })
 
         // Reset JWT secret - invalidates all existing sessions
         resetJwtSecret()
 
         // Clear the current user's cookie since it's now invalid
-        deleteCookie(event, cookieName)
+        const cookieName2 = getSessionCookieName()
+        deleteCookie(event, cookieName2)
 
         return { success: true }
     } catch (error: any) {

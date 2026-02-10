@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,10 +19,9 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        const rows = await pool.query(
-            `SELECT
+        const vehicleData = await withConnection(async (conn) => {
+            const rows = await conn.query(
+                `SELECT
                 v.id,
                 v.brand,
                 v.model,
@@ -74,14 +75,16 @@ export default defineEventHandler(async (event) => {
                 GROUP BY ma.vehicle_id
              ) alerts_overdue ON alerts_overdue.vehicle_id = v.id
              WHERE v.id = ? AND v.user_id = ?`,
-            [id, result.userId]
-        )
+                [id, result.userId]
+            )
+            return rows
+        })
 
-        if ((rows as any[]).length === 0) {
+        if ((vehicleData as any[]).length === 0) {
             throw createError({ statusCode: 404, message: 'Veicolo non trovato' })
         }
 
-        const r = (rows as any[])[0]
+        const r = (vehicleData as any[])[0]
         const kmDriven = (r.current_mileage || 0) - (r.initial_mileage || 0)
         const runningCost = parseFloat(r.total_fuel_cost) + parseFloat(r.total_maintenance_cost)
         const purchasePrice = r.purchase_price ? parseFloat(r.purchase_price) : 0

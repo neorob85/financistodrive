@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,19 +19,19 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            const [config] = await conn.query('SELECT id FROM configurations WHERE id = ?', [id])
+            if (!config) {
+                throw createError({ statusCode: 404, message: 'Configurazione non trovata' })
+            }
 
-        const [config] = await pool.query('SELECT id FROM configurations WHERE id = ?', [id])
-        if (!config) {
-            throw createError({ statusCode: 404, message: 'Configurazione non trovata' })
-        }
-
-        await pool.query('DELETE FROM configurations WHERE id = ?', [id])
+            await conn.query('DELETE FROM configurations WHERE id = ?', [id])
+        })
 
         return { success: true }
     } catch (error: any) {

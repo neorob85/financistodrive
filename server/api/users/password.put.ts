@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import { withConnection } from '../../utils/db'
 
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
@@ -25,29 +26,30 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        // Get current password hash
         const getUserSql = await loadSql('auth/get_user_by_id.sql')
-        const users = await pool.query(getUserSql, [result.userId])
-
-        if (!users || users.length === 0) {
-            throw createError({ statusCode: 404, message: 'Utente non trovato' })
-        }
-
-        // Verify current password - need to get the full user with password
-        const fullUserSql = 'SELECT password FROM users WHERE id = ?'
-        const fullUsers = await pool.query(fullUserSql, [result.userId])
-        const passwordValid = await bcrypt.compare(currentPassword, fullUsers[0].password)
-
-        if (!passwordValid) {
-            throw createError({ statusCode: 401, message: 'Password attuale non corretta' })
-        }
-
-        // Hash new password and update
-        const hash = await bcrypt.hash(newPassword, 10)
         const updateSql = await loadSql('users/update_user_password.sql')
-        await pool.query(updateSql, [hash, result.userId])
+
+        await withConnection(async (conn) => {
+            // Get current password hash
+            const users = await conn.query(getUserSql, [result.userId])
+
+            if (!users || users.length === 0) {
+                throw createError({ statusCode: 404, message: 'Utente non trovato' })
+            }
+
+            // Verify current password - need to get the full user with password
+            const fullUserSql = 'SELECT password FROM users WHERE id = ?'
+            const fullUsers = await conn.query(fullUserSql, [result.userId])
+            const passwordValid = await bcrypt.compare(currentPassword, fullUsers[0].password)
+
+            if (!passwordValid) {
+                throw createError({ statusCode: 401, message: 'Password attuale non corretta' })
+            }
+
+            // Hash new password and update
+            const hash = await bcrypt.hash(newPassword, 10)
+            await conn.query(updateSql, [hash, result.userId])
+        })
 
         return { success: true }
     } catch (error: any) {

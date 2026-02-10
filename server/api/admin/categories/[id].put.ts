@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,13 +19,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
-
         const body = await readBody(event)
         const { title, parentId, sortOrder, isActive, isAutomotive } = body
 
@@ -31,10 +26,17 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Il nome della categoria è obbligatorio' })
         }
 
-        await pool.query(
-            'UPDATE categories SET title = ?, parent_id = ?, sort_order = ?, is_active = ?, is_automotive = ? WHERE id = ? AND user_id IS NULL',
-            [title, parentId || null, sortOrder || 0, isActive !== false ? 1 : 0, isAutomotive ? 1 : 0, id]
-        )
+        await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
+
+            await conn.query(
+                'UPDATE categories SET title = ?, parent_id = ?, sort_order = ?, is_active = ?, is_automotive = ? WHERE id = ? AND user_id IS NULL',
+                [title, parentId || null, sortOrder || 0, isActive !== false ? 1 : 0, isAutomotive ? 1 : 0, id]
+            )
+        })
 
         return { success: true }
     } catch (error: any) {

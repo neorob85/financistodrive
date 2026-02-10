@@ -2,6 +2,7 @@ import { readMultipartFormData } from 'h3'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { withConnection } from '../../../utils/db'
 
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
@@ -27,7 +28,6 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Nessun file caricato' })
         }
 
-        const pool = await getPool()
         const uploadedFiles: string[] = []
 
         // Create uploads directory: /uploads/attachments/{userId}/{transactionId}/
@@ -50,10 +50,12 @@ export default defineEventHandler(async (event) => {
                 // Store relative path in database
                 const relativePath = `/uploads/attachments/${result.userId}/${transactionId}/${filename}`
 
-                await pool.query(
-                    `INSERT INTO transaction_attachments (transaction_id, file_path) VALUES (?, ?)`,
-                    [transactionId, relativePath]
-                )
+                await withConnection(async (conn) => {
+                    await conn.query(
+                        `INSERT INTO transaction_attachments (transaction_id, file_path) VALUES (?, ?)`,
+                        [transactionId, relativePath]
+                    )
+                })
 
                 uploadedFiles.push(relativePath)
             }

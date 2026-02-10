@@ -1,4 +1,4 @@
-import { getPool } from '../../utils/db'
+import { withConnection } from '../../utils/db'
 
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
@@ -21,30 +21,32 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const message = await withConnection(async (conn) => {
+            // Check if subscription already exists for this endpoint
+            const existing = await conn.query('SELECT id, user_id FROM push_subscriptions WHERE endpoint = ?', [body.endpoint])
 
-        // Check if subscription already exists for this endpoint
-        const existing = await pool.query('SELECT id, user_id FROM push_subscriptions WHERE endpoint = ?', [body.endpoint])
-
-        if (existing.length > 0) {
-            // Only allow updating own subscription, delete stale ones from other users
-            if (existing[0].user_id !== result.userId) {
-                await pool.query('DELETE FROM push_subscriptions WHERE endpoint = ?', [body.endpoint])
-            } else {
-                await pool.query(
-                    'UPDATE push_subscriptions SET keys_p256dh = ?, keys_auth = ? WHERE endpoint = ? AND user_id = ?',
-                    [body.keys.p256dh, body.keys.auth, body.endpoint, result.userId]
-                )
-                return { success: true, message: 'Subscription updated' }
+            if (existing.length > 0) {
+                // Only allow updating own subscription, delete stale ones from other users
+                if (existing[0].user_id !== result.userId) {
+                    await conn.query('DELETE FROM push_subscriptions WHERE endpoint = ?', [body.endpoint])
+                } else {
+                    await conn.query(
+                        'UPDATE push_subscriptions SET keys_p256dh = ?, keys_auth = ? WHERE endpoint = ? AND user_id = ?',
+                        [body.keys.p256dh, body.keys.auth, body.endpoint, result.userId]
+                    )
+                    return 'Subscription updated'
+                }
             }
-        }
 
-        await pool.query(
-            'INSERT INTO push_subscriptions (user_id, endpoint, keys_p256dh, keys_auth) VALUES (?, ?, ?, ?)',
-            [result.userId, body.endpoint, body.keys.p256dh, body.keys.auth]
-        )
+            await conn.query(
+                'INSERT INTO push_subscriptions (user_id, endpoint, keys_p256dh, keys_auth) VALUES (?, ?, ?, ?)',
+                [result.userId, body.endpoint, body.keys.p256dh, body.keys.auth]
+            )
 
-        return { success: true, message: 'Subscription created' }
+            return 'Subscription created'
+        })
+
+        return { success: true, message }
     } catch (error: any) {
         throw createError({ statusCode: 500, message: error.message })
     }

@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,10 +14,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-        // Use generic SQL to get configuration
         const sql = await loadSql('configurations/get_user_config.sql')
-        const rows = await pool.query(sql, ['theme', result.userId])
+
+        const rows = await withConnection(async (conn) => {
+            return await conn.query(sql, ['theme', result.userId])
+        })
 
         // Default to 'system' or 'light' if not found
         const theme = rows && rows.length > 0 ? rows[0].config_value : 'system'

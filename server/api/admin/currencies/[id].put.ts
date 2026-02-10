@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,13 +19,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
-
         const body = await readBody(event)
         const { title, abbreviation, symbol, sortOrder, isDefault } = body
 
@@ -31,19 +26,26 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Nome, abbreviazione e simbolo sono obbligatori' })
         }
 
-        const [existing] = await pool.query('SELECT id FROM currencies WHERE abbreviation = ? AND id != ?', [abbreviation, id])
-        if (existing) {
-            throw createError({ statusCode: 409, message: 'Abbreviazione già esistente' })
-        }
+        await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        if (isDefault) {
-            await pool.query('UPDATE currencies SET is_default = 0')
-        }
+            const [existing] = await conn.query('SELECT id FROM currencies WHERE abbreviation = ? AND id != ?', [abbreviation, id])
+            if (existing) {
+                throw createError({ statusCode: 409, message: 'Abbreviazione già esistente' })
+            }
 
-        await pool.query(
-            'UPDATE currencies SET title = ?, abbreviation = ?, symbol = ?, sort_order = ?, is_default = ? WHERE id = ?',
-            [title, abbreviation, symbol, sortOrder || 0, isDefault ? 1 : 0, id]
-        )
+            if (isDefault) {
+                await conn.query('UPDATE currencies SET is_default = 0')
+            }
+
+            await conn.query(
+                'UPDATE currencies SET title = ?, abbreviation = ?, symbol = ?, sort_order = ?, is_default = ? WHERE id = ?',
+                [title, abbreviation, symbol, sortOrder || 0, isDefault ? 1 : 0, id]
+            )
+        })
 
         return { success: true }
     } catch (error: any) {

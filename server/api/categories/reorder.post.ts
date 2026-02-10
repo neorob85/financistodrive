@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -19,17 +21,17 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        // Update each category's sort_order and parent_id
-        for (const update of updates) {
-            await pool.query(
-                `UPDATE categories 
+        await withConnection(async (conn) => {
+            // Update each category's sort_order and parent_id
+            for (const update of updates) {
+                await conn.query(
+                    `UPDATE categories 
          SET sort_order = ?, parent_id = ?
          WHERE id = ? AND (user_id = ? OR user_id IS NULL)`,
-                [update.sortOrder, update.parentId ?? null, update.id, result.userId]
-            )
-        }
+                    [update.sortOrder, update.parentId ?? null, update.id, result.userId]
+                )
+            }
+        })
 
         return { success: true }
     } catch (error: any) {

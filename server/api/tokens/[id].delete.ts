@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,9 +19,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('tokens/delete_token.sql')
-        const deleteResult = await pool.query(sql, [tokenId, result.userId])
+
+        const deleteResult = await withConnection(async (conn) => {
+            return await conn.query(sql, [tokenId, result.userId])
+        })
 
         if (deleteResult.affectedRows === 0) {
             throw createError({ statusCode: 404, message: 'Token non trovato' })

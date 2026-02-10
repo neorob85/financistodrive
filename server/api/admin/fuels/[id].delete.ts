@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,19 +19,19 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            const [fuel] = await conn.query('SELECT id FROM fuels WHERE id = ?', [id])
+            if (!fuel) {
+                throw createError({ statusCode: 404, message: 'Carburante non trovato' })
+            }
 
-        const [fuel] = await pool.query('SELECT id FROM fuels WHERE id = ?', [id])
-        if (!fuel) {
-            throw createError({ statusCode: 404, message: 'Carburante non trovato' })
-        }
-
-        await pool.query('DELETE FROM fuels WHERE id = ?', [id])
+            await conn.query('DELETE FROM fuels WHERE id = ?', [id])
+        })
 
         return { success: true }
     } catch (error: any) {

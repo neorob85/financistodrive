@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,23 +14,23 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const currencies = await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            const rows = await conn.query('SELECT id, title, abbreviation, symbol, sort_order, is_default FROM currencies ORDER BY sort_order, title')
 
-        const rows = await pool.query('SELECT id, title, abbreviation, symbol, sort_order, is_default FROM currencies ORDER BY sort_order, title')
-
-        const currencies = (rows as any[]).map((row: any) => ({
-            id: row.id,
-            title: row.title,
-            abbreviation: row.abbreviation,
-            symbol: row.symbol,
-            sortOrder: row.sort_order,
-            isDefault: !!row.is_default
-        }))
+            return (rows as any[]).map((row: any) => ({
+                id: row.id,
+                title: row.title,
+                abbreviation: row.abbreviation,
+                symbol: row.symbol,
+                sortOrder: row.sort_order,
+                isDefault: !!row.is_default
+            }))
+        })
 
         return { currencies }
     } catch (error: any) {

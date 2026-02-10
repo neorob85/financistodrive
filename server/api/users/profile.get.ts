@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,9 +14,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('users/get_user_profile.sql')
-        const users = await pool.query(sql, [result.userId])
+
+        const users = await withConnection(async (conn) => {
+            return await conn.query(sql, [result.userId])
+        })
 
         if (!users || users.length === 0) {
             throw createError({ statusCode: 404, message: 'Utente non trovato' })

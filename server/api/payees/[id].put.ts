@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -24,11 +26,12 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-        await pool.query(
-            'UPDATE payees SET title = ?, is_active = ? WHERE id = ? AND user_id = ?',
-            [title, isActive !== false ? 1 : 0, id, result.userId]
-        )
+        await withConnection(async (conn) => {
+            return await conn.query(
+                'UPDATE payees SET title = ?, is_active = ? WHERE id = ? AND user_id = ?',
+                [title, isActive !== false ? 1 : 0, id, result.userId]
+            )
+        })
 
         return { success: true }
     } catch (error: any) {

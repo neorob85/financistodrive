@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -13,9 +15,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const getUserSql = await loadSql('auth/get_user_by_id.sql')
-        const users = await pool.query(getUserSql, [result.userId])
+
+        const users = await withConnection(async (conn) => {
+            return await conn.query(getUserSql, [result.userId])
+        })
 
         if (!users || users.length === 0) {
             return { authenticated: false }

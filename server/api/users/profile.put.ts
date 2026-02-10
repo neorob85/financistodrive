@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -15,9 +17,11 @@ export default defineEventHandler(async (event) => {
     const { name, surname, email } = body
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('users/update_user_profile.sql')
-        await pool.query(sql, [name || null, surname || null, email || null, result.userId])
+
+        await withConnection(async (conn) => {
+            return await conn.query(sql, [name || null, surname || null, email || null, result.userId])
+        })
 
         return { success: true }
     } catch (error: any) {

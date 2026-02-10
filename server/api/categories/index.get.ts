@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,9 +14,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('categories/get_user_categories.sql')
-        const categories = await pool.query(sql, [result.userId])
+
+        const categories = await withConnection(async (conn) => {
+            return await conn.query(sql, [result.userId])
+        })
 
         return {
             categories: categories.map((c: any) => ({

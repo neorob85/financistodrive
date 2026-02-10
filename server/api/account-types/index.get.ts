@@ -1,8 +1,12 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async () => {
     try {
-        const pool = await getPool()
         const sql = await loadSql('account_types/get_all.sql')
-        const types = await pool.query(sql)
+
+        const types = await withConnection(async (conn) => {
+            return await conn.query(sql)
+        })
 
         return {
             accountTypes: types.map((t: any) => ({

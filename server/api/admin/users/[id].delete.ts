@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,26 +19,26 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        await withConnection(async (conn) => {
+            // Verify caller is admin
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        // Verify caller is admin
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            // Prevent self-deletion
+            if (String(result.userId) === String(id)) {
+                throw createError({ statusCode: 400, message: 'Non puoi eliminare il tuo stesso account' })
+            }
 
-        // Prevent self-deletion
-        if (String(result.userId) === String(id)) {
-            throw createError({ statusCode: 400, message: 'Non puoi eliminare il tuo stesso account' })
-        }
+            // Verify user exists
+            const [user] = await conn.query('SELECT id FROM users WHERE id = ?', [id])
+            if (!user) {
+                throw createError({ statusCode: 404, message: 'Utente non trovato' })
+            }
 
-        // Verify user exists
-        const [user] = await pool.query('SELECT id FROM users WHERE id = ?', [id])
-        if (!user) {
-            throw createError({ statusCode: 404, message: 'Utente non trovato' })
-        }
-
-        await pool.query('DELETE FROM users WHERE id = ?', [id])
+            await conn.query('DELETE FROM users WHERE id = ?', [id])
+        })
 
         return { success: true }
     } catch (error: any) {

@@ -1,6 +1,7 @@
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { withConnection } from '../../../../utils/db'
 
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
@@ -21,32 +22,34 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const attachment = await withConnection(async (conn) => {
+            // Get attachment info and verify it belongs to user's transaction
+            const [att] = await conn.query(
+                `SELECT ta.id, ta.file_path, ta.transaction_id
+                 FROM transaction_attachments ta
+                 JOIN transactions t ON ta.transaction_id = t.id
+                 WHERE ta.id = ? AND t.user_id = ?`,
+                [attachmentId, result.userId]
+            )
 
-        // Get attachment info and verify it belongs to user's transaction
-        const [attachment] = await pool.query(
-            `SELECT ta.id, ta.file_path, ta.transaction_id
-             FROM transaction_attachments ta
-             JOIN transactions t ON ta.transaction_id = t.id
-             WHERE ta.id = ? AND t.user_id = ?`,
-            [attachmentId, result.userId]
-        )
+            if (!att) {
+                throw createError({ statusCode: 404, message: 'Allegato non trovato' })
+            }
 
-        if (!attachment) {
-            throw createError({ statusCode: 404, message: 'Allegato non trovato' })
-        }
+            // Delete from database
+            await conn.query(
+                `DELETE FROM transaction_attachments WHERE id = ?`,
+                [attachmentId]
+            )
+
+            return att
+        })
 
         // Delete file from filesystem
         const filePath = join(process.cwd(), 'public', attachment.file_path)
         if (existsSync(filePath)) {
             await unlink(filePath)
         }
-
-        // Delete from database
-        await pool.query(
-            `DELETE FROM transaction_attachments WHERE id = ?`,
-            [attachmentId]
-        )
 
         return { success: true }
     } catch (error: any) {

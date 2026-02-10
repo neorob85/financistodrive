@@ -17,7 +17,17 @@ export async function getPool(): Promise<mariadb.Pool> {
         user: config.user,
         password: config.password,
         database: useRuntimeConfig().dbName as string,
-        connectionLimit: 5
+        connectionLimit: 5,
+        // Timeout per connessioni inattive (30 secondi) - rilascia connessioni non usate
+        idleTimeout: 30000,
+        // Timeout per acquisire una connessione (10 secondi)
+        acquireTimeout: 10000,
+        // Mantieni almeno 0 connessioni attive (crea su richiesta)
+        minimumIdle: 0,
+        // Timeout per connessioni che non vengono restituite al pool
+        leakDetectionTimeout: 60000,
+        // Ricrea connessioni dopo un errore di rete
+        resetAfterUse: true
     })
 
     return pool
@@ -43,7 +53,79 @@ export async function testConnection(config: DbConfig): Promise<{ success: boole
 
 export async function resetPool(): Promise<void> {
     if (pool) {
-        await pool.end()
+        try {
+            await pool.end()
+        } catch {
+            // Ignora errori durante la chiusura del pool
+        }
         pool = null
     }
+}
+
+// Codici errore MariaDB che indicano problemi di connessione
+const CONNECTION_ERROR_CODES = [
+    'PROTOCOL_CONNECTION_LOST',
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'ETIMEDOUT',
+    'EPIPE',
+    'ER_CON_COUNT_ERROR',
+    'ER_SERVER_SHUTDOWN',
+    'ER_NET_READ_ERROR',
+    'ER_NET_WRITE_ERROR'
+]
+
+/**
+ * Wrapper per operazioni database che gestisce automaticamente gli errori di connessione.
+ * Se la connessione fallisce, resetta il pool e riprova una volta.
+ * 
+ * @example
+ * const users = await withConnection(async (conn) => {
+ *     return await conn.query('SELECT * FROM users WHERE id = ?', [userId])
+ * })
+ */
+export async function withConnection<T>(
+    operation: (conn: mariadb.PoolConnection) => Promise<T>,
+    maxRetries: number = 1
+): Promise<T> {
+    let lastError: Error | null = null
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        let conn: mariadb.PoolConnection | null = null
+
+        try {
+            const pool = await getPool()
+            conn = await pool.getConnection()
+            const result = await operation(conn)
+            return result
+        } catch (error: any) {
+            lastError = error
+
+            // Controlla se è un errore di connessione
+            const isConnectionError = CONNECTION_ERROR_CODES.some(code =>
+                error.code === code ||
+                error.message?.includes(code) ||
+                error.errno === code
+            ) || error.fatal === true
+
+            // Se è un errore di connessione e non abbiamo esaurito i tentativi, riprova
+            if (isConnectionError && attempt < maxRetries) {
+                console.warn(`[DB] Errore di connessione (tentativo ${attempt + 1}/${maxRetries + 1}): ${error.message}. Resetto il pool e riprovo...`)
+                await resetPool()
+                continue
+            }
+
+            throw error
+        } finally {
+            if (conn) {
+                try {
+                    conn.release()
+                } catch {
+                    // Ignora errori durante il rilascio della connessione
+                }
+            }
+        }
+    }
+
+    throw lastError
 }

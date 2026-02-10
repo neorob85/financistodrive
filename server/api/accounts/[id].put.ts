@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -29,26 +31,27 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('accounts/update_account.sql')
 
-        await pool.query(sql, [
-            title,
-            currencyId,
-            accountTypeId,
-            issuer || null,
-            accountNumber || null,
-            isActive !== false ? 1 : 0,
-            isIncludedIntoTotals !== false ? 1 : 0,
-            cardLimit || null,
-            notes || null,
-            isCreditCard ? 1 : 0,
-            accountCreditCard || null,
-            cardClosingDay || null,
-            cardPaymentDay || null,
-            id,
-            result.userId
-        ])
+        await withConnection(async (conn) => {
+            return await conn.query(sql, [
+                title,
+                currencyId,
+                accountTypeId,
+                issuer || null,
+                accountNumber || null,
+                isActive !== false ? 1 : 0,
+                isIncludedIntoTotals !== false ? 1 : 0,
+                cardLimit || null,
+                notes || null,
+                isCreditCard ? 1 : 0,
+                accountCreditCard || null,
+                cardClosingDay || null,
+                cardPaymentDay || null,
+                id,
+                result.userId
+            ])
+        })
 
         return { success: true }
     } catch (error: any) {

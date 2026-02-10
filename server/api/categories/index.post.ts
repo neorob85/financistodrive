@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -19,17 +21,18 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('categories/insert_category.sql')
 
-        const insertResult = await pool.query(sql, [
-            title,
-            parentId || null,
-            isActive !== false ? 1 : 0,
-            sortOrder || 0,
-            result.userId,
-            isAutomotive ? 1 : 0
-        ])
+        const insertResult = await withConnection(async (conn) => {
+            return await conn.query(sql, [
+                title,
+                parentId || null,
+                isActive !== false ? 1 : 0,
+                sortOrder || 0,
+                result.userId,
+                isAutomotive ? 1 : 0
+            ])
+        })
 
         return {
             success: true,

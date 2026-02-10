@@ -1,8 +1,12 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async () => {
     try {
-        const pool = await getPool()
         const sql = await loadSql('currencies/get_all.sql')
-        const currencies = await pool.query(sql)
+
+        const currencies = await withConnection(async (conn) => {
+            return await conn.query(sql)
+        })
 
         return {
             currencies: currencies.map((c: any) => ({

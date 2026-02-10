@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,19 +19,19 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            const [category] = await conn.query('SELECT id FROM categories WHERE id = ? AND user_id IS NULL', [id])
+            if (!category) {
+                throw createError({ statusCode: 404, message: 'Categoria non trovata' })
+            }
 
-        const [category] = await pool.query('SELECT id FROM categories WHERE id = ? AND user_id IS NULL', [id])
-        if (!category) {
-            throw createError({ statusCode: 404, message: 'Categoria non trovata' })
-        }
-
-        await pool.query('DELETE FROM categories WHERE id = ? AND user_id IS NULL', [id])
+            await conn.query('DELETE FROM categories WHERE id = ? AND user_id IS NULL', [id])
+        })
 
         return { success: true }
     } catch (error: any) {

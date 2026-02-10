@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,20 +19,20 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        await withConnection(async (conn) => {
+            const [existing] = await conn.query(
+                'SELECT id FROM transaction_schedules WHERE id = ? AND user_id = ?',
+                [id, result.userId]
+            )
+            if (!existing) {
+                throw createError({ statusCode: 404, message: 'Schedulazione non trovata' })
+            }
 
-        const [existing] = await pool.query(
-            'SELECT id FROM transaction_schedules WHERE id = ? AND user_id = ?',
-            [id, result.userId]
-        )
-        if (!existing) {
-            throw createError({ statusCode: 404, message: 'Schedulazione non trovata' })
-        }
-
-        await pool.query(
-            'DELETE FROM transaction_schedules WHERE id = ? AND user_id = ?',
-            [id, result.userId]
-        )
+            await conn.query(
+                'DELETE FROM transaction_schedules WHERE id = ? AND user_id = ?',
+                [id, result.userId]
+            )
+        })
 
         return { success: true }
     } catch (error: any) {

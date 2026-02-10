@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,8 +14,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
         // Recalculate actual_amount for all user accounts
         // amount_from and amount_to already have correct signs (+ and -)
         // Formula: initial_amount + SUM(amount_from for from_account_id where parent_id IS NULL) + SUM(amount_to for to_account_id)
@@ -34,7 +34,9 @@ export default defineEventHandler(async (event) => {
             WHERE a.user_id = ?
         `
 
-        const updateResult = await pool.query(sql, [result.userId])
+        const updateResult = await withConnection(async (conn) => {
+            return await conn.query(sql, [result.userId])
+        })
 
         return {
             success: true,

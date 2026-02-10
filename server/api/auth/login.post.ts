@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import { withConnection } from '../../utils/db'
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
@@ -12,41 +13,44 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        // Find user by username
         const getUserSql = await loadSql('auth/get_user_by_username.sql')
-        const users = await pool.query(getUserSql, [username])
-
-        if (!users || users.length === 0) {
-            throw createError({
-                statusCode: 401,
-                message: 'Credenziali non valide'
-            })
-        }
-
-        const user = users[0]
-
-        // Check if user is active
-        if (!user.is_active) {
-            throw createError({
-                statusCode: 401,
-                message: 'Account disabilitato'
-            })
-        }
-
-        // Verify password
-        const passwordValid = await bcrypt.compare(password, user.password)
-        if (!passwordValid) {
-            throw createError({
-                statusCode: 401,
-                message: 'Credenziali non valide'
-            })
-        }
-
-        // Update last_login
         const updateLoginSql = await loadSql('auth/update_last_login.sql')
-        await pool.query(updateLoginSql, [user.id])
+
+        const user = await withConnection(async (conn) => {
+            // Find user by username
+            const users = await conn.query(getUserSql, [username])
+
+            if (!users || users.length === 0) {
+                throw createError({
+                    statusCode: 401,
+                    message: 'Credenziali non valide'
+                })
+            }
+
+            const foundUser = users[0]
+
+            // Check if user is active
+            if (!foundUser.is_active) {
+                throw createError({
+                    statusCode: 401,
+                    message: 'Account disabilitato'
+                })
+            }
+
+            // Verify password
+            const passwordValid = await bcrypt.compare(password, foundUser.password)
+            if (!passwordValid) {
+                throw createError({
+                    statusCode: 401,
+                    message: 'Credenziali non valide'
+                })
+            }
+
+            // Update last_login
+            await conn.query(updateLoginSql, [foundUser.id])
+
+            return foundUser
+        })
 
         // Create JWT token
         const token = createToken(user.id)

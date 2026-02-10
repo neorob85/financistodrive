@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -24,22 +26,23 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-        await pool.query(
-            `UPDATE maintenance_types
+        await withConnection(async (conn) => {
+            return await conn.query(
+                `UPDATE maintenance_types
        SET title = ?, vehicle_id = ?, default_interval_km = ?, default_interval_months = ?, default_days_before_alert = ?, default_km_before_alert = ?
        WHERE id = ? AND user_id = ?`,
-            [
-                title,
-                vehicleId || null,
-                defaultIntervalKm || null,
-                defaultIntervalMonths || null,
-                defaultDaysBeforeAlert || null,
-                defaultKmBeforeAlert || null,
-                id,
-                result.userId
-            ]
-        )
+                [
+                    title,
+                    vehicleId || null,
+                    defaultIntervalKm || null,
+                    defaultIntervalMonths || null,
+                    defaultDaysBeforeAlert || null,
+                    defaultKmBeforeAlert || null,
+                    id,
+                    result.userId
+                ]
+            )
+        })
 
         return { success: true }
     } catch (error: any) {

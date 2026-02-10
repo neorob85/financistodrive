@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -24,16 +26,17 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('projects/update_project.sql')
 
-        await pool.query(sql, [
-            title,
-            isActive !== false ? 1 : 0,
-            budget || -1,
-            id,
-            result.userId
-        ])
+        await withConnection(async (conn) => {
+            return await conn.query(sql, [
+                title,
+                isActive !== false ? 1 : 0,
+                budget || -1,
+                id,
+                result.userId
+            ])
+        })
 
         return { success: true }
     } catch (error: any) {

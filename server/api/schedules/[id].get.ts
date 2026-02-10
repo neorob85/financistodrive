@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,51 +19,51 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const row = await withConnection(async (conn) => {
+            const rows = await conn.query(
+                `SELECT
+                    ts.id,
+                    ts.title,
+                    ts.amount_from,
+                    ts.amount_to,
+                    ts.from_account_id,
+                    a_from.title AS from_account_title,
+                    ts.to_account_id,
+                    a_to.title AS to_account_title,
+                    ts.category_id,
+                    c.title AS category_title,
+                    ts.project_id,
+                    p.title AS project_title,
+                    ts.payee_id,
+                    pay.title AS payee_title,
+                    ts.currency_id,
+                    cur.abbreviation AS currency_code,
+                    cur.symbol AS currency_symbol,
+                    ts.frequency,
+                    ts.start_date,
+                    ts.end_date,
+                    ts.next_transaction_date,
+                    ts.notes,
+                    ts.is_transfer,
+                    ts.is_automotive,
+                    ts.is_active
+                FROM transaction_schedules ts
+                LEFT JOIN accounts a_from ON ts.from_account_id = a_from.id
+                LEFT JOIN accounts a_to ON ts.to_account_id = a_to.id
+                LEFT JOIN categories c ON ts.category_id = c.id
+                LEFT JOIN projects p ON ts.project_id = p.id
+                LEFT JOIN payees pay ON ts.payee_id = pay.id
+                LEFT JOIN currencies cur ON ts.currency_id = cur.id
+                WHERE ts.id = ? AND ts.user_id = ?`,
+                [id, result.userId]
+            )
 
-        const rows = await pool.query(
-            `SELECT
-                ts.id,
-                ts.title,
-                ts.amount_from,
-                ts.amount_to,
-                ts.from_account_id,
-                a_from.title AS from_account_title,
-                ts.to_account_id,
-                a_to.title AS to_account_title,
-                ts.category_id,
-                c.title AS category_title,
-                ts.project_id,
-                p.title AS project_title,
-                ts.payee_id,
-                pay.title AS payee_title,
-                ts.currency_id,
-                cur.abbreviation AS currency_code,
-                cur.symbol AS currency_symbol,
-                ts.frequency,
-                ts.start_date,
-                ts.end_date,
-                ts.next_transaction_date,
-                ts.notes,
-                ts.is_transfer,
-                ts.is_automotive,
-                ts.is_active
-            FROM transaction_schedules ts
-            LEFT JOIN accounts a_from ON ts.from_account_id = a_from.id
-            LEFT JOIN accounts a_to ON ts.to_account_id = a_to.id
-            LEFT JOIN categories c ON ts.category_id = c.id
-            LEFT JOIN projects p ON ts.project_id = p.id
-            LEFT JOIN payees pay ON ts.payee_id = pay.id
-            LEFT JOIN currencies cur ON ts.currency_id = cur.id
-            WHERE ts.id = ? AND ts.user_id = ?`,
-            [id, result.userId]
-        )
+            if (!rows || rows.length === 0) {
+                throw createError({ statusCode: 404, message: 'Schedulazione non trovata' })
+            }
 
-        if (!rows || rows.length === 0) {
-            throw createError({ statusCode: 404, message: 'Schedulazione non trovata' })
-        }
-
-        const row = rows[0]
+            return rows[0]
+        })
 
         // Determine transaction type
         let transactionType: 'income' | 'expense' | 'transfer' = 'expense'

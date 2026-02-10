@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,13 +14,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
-
         const body = await readBody(event)
         const { key, value } = body
 
@@ -26,15 +21,22 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'La chiave è obbligatoria' })
         }
 
-        const [existing] = await pool.query('SELECT id FROM configurations WHERE config_key = ?', [key])
-        if (existing) {
-            throw createError({ statusCode: 409, message: 'Chiave già esistente' })
-        }
+        const insertResult = await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const insertResult = await pool.query(
-            'INSERT INTO configurations (config_key, config_value) VALUES (?, ?)',
-            [key, value || null]
-        )
+            const [existing] = await conn.query('SELECT id FROM configurations WHERE config_key = ?', [key])
+            if (existing) {
+                throw createError({ statusCode: 409, message: 'Chiave già esistente' })
+            }
+
+            return await conn.query(
+                'INSERT INTO configurations (config_key, config_value) VALUES (?, ?)',
+                [key, value || null]
+            )
+        })
 
         return { success: true, id: Number(insertResult.insertId) }
     } catch (error: any) {

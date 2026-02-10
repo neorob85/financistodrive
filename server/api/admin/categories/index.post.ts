@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,13 +14,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
-
         const body = await readBody(event)
         const { title, parentId, sortOrder, isActive, isAutomotive } = body
 
@@ -26,10 +21,17 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Il nome della categoria è obbligatorio' })
         }
 
-        const insertResult = await pool.query(
-            'INSERT INTO categories (title, parent_id, sort_order, is_active, user_id, is_automotive) VALUES (?, ?, ?, ?, NULL, ?)',
-            [title, parentId || null, sortOrder || 0, isActive !== false ? 1 : 0, isAutomotive ? 1 : 0]
-        )
+        const insertResult = await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
+
+            return await conn.query(
+                'INSERT INTO categories (title, parent_id, sort_order, is_active, user_id, is_automotive) VALUES (?, ?, ?, ?, NULL, ?)',
+                [title, parentId || null, sortOrder || 0, isActive !== false ? 1 : 0, isAutomotive ? 1 : 0]
+            )
+        })
 
         return { success: true, id: Number(insertResult.insertId) }
     } catch (error: any) {

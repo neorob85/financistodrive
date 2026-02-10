@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,9 +14,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('tokens/get_user_tokens.sql')
-        const tokens = await pool.query(sql, [result.userId])
+
+        const tokens = await withConnection(async (conn) => {
+            return await conn.query(sql, [result.userId])
+        })
 
         return {
             tokens: tokens.map((t: any) => ({

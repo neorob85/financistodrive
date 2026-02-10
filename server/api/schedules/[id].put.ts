@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,17 +19,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
-
-        // Check ownership
-        const [existing] = await pool.query(
-            'SELECT id FROM transaction_schedules WHERE id = ? AND user_id = ?',
-            [id, result.userId]
-        )
-        if (!existing) {
-            throw createError({ statusCode: 404, message: 'Schedulazione non trovata' })
-        }
-
         const body = await readBody(event)
 
         const {
@@ -41,21 +32,32 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Campi obbligatori mancanti' })
         }
 
-        await pool.query(
-            `UPDATE transaction_schedules SET
-                title = ?, amount_from = ?, amount_to = ?, from_account_id = ?, to_account_id = ?,
-                category_id = ?, project_id = ?, payee_id = ?, currency_id = ?,
-                start_date = ?, end_date = ?, frequency = ?, next_transaction_date = ?,
-                notes = ?, is_transfer = ?, is_automotive = ?, is_active = ?
-            WHERE id = ? AND user_id = ?`,
-            [
-                title, amountFrom, amountTo || null, fromAccountId, toAccountId || null,
-                categoryId || null, projectId || null, payeeId || null, currencyId || 1,
-                startDate, endDate || null, frequency, nextTransactionDate,
-                notes || null, isTransfer ? 1 : 0, isAutomotive ? 1 : 0, isActive !== false ? 1 : 0,
-                id, result.userId
-            ]
-        )
+        await withConnection(async (conn) => {
+            // Check ownership
+            const [existing] = await conn.query(
+                'SELECT id FROM transaction_schedules WHERE id = ? AND user_id = ?',
+                [id, result.userId]
+            )
+            if (!existing) {
+                throw createError({ statusCode: 404, message: 'Schedulazione non trovata' })
+            }
+
+            await conn.query(
+                `UPDATE transaction_schedules SET
+                    title = ?, amount_from = ?, amount_to = ?, from_account_id = ?, to_account_id = ?,
+                    category_id = ?, project_id = ?, payee_id = ?, currency_id = ?,
+                    start_date = ?, end_date = ?, frequency = ?, next_transaction_date = ?,
+                    notes = ?, is_transfer = ?, is_automotive = ?, is_active = ?
+                WHERE id = ? AND user_id = ?`,
+                [
+                    title, amountFrom, amountTo || null, fromAccountId, toAccountId || null,
+                    categoryId || null, projectId || null, payeeId || null, currencyId || 1,
+                    startDate, endDate || null, frequency, nextTransactionDate,
+                    notes || null, isTransfer ? 1 : 0, isAutomotive ? 1 : 0, isActive !== false ? 1 : 0,
+                    id, result.userId
+                ]
+            )
+        })
 
         return { success: true }
     } catch (error: any) {

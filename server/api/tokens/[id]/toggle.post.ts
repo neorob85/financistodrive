@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,9 +19,11 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const sql = await loadSql('tokens/toggle_token.sql')
-        const toggleResult = await pool.query(sql, [tokenId, result.userId])
+
+        const toggleResult = await withConnection(async (conn) => {
+            return await conn.query(sql, [tokenId, result.userId])
+        })
 
         if (toggleResult.affectedRows === 0) {
             throw createError({ statusCode: 404, message: 'Token non trovato' })

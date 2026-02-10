@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     // Check authentication
     const cookieName = getSessionCookieName()
@@ -20,29 +22,32 @@ export default defineEventHandler(async (event) => {
     const offset = (page - 1) * limit
 
     try {
-        const pool = await getPool()
-        let transactions = []
-        let total = 0
+        const data = await withConnection(async (conn) => {
+            let transactions = []
+            let total = 0
 
-        if (accountId) {
-            // Get transactions for account
-            const txSql = await loadSql('transactions/get_account_transactions_paginated.sql')
-            transactions = await pool.query(txSql, [result.userId, accountId, accountId, limit, offset])
+            if (accountId) {
+                // Get transactions for account
+                const txSql = await loadSql('transactions/get_account_transactions_paginated.sql')
+                transactions = await conn.query(txSql, [result.userId, accountId, accountId, limit, offset])
 
-            // Get total count for account
-            const countSql = await loadSql('transactions/count_account_transactions.sql')
-            const countResult = await pool.query(countSql, [result.userId, accountId, accountId])
-            total = Number(countResult[0]?.total || 0)
-        } else {
-            // Get all transactions
-            const txSql = await loadSql('transactions/get_transactions_paginated.sql')
-            transactions = await pool.query(txSql, [result.userId, limit, offset])
+                // Get total count for account
+                const countSql = await loadSql('transactions/count_account_transactions.sql')
+                const countResult = await conn.query(countSql, [result.userId, accountId, accountId])
+                total = Number(countResult[0]?.total || 0)
+            } else {
+                // Get all transactions
+                const txSql = await loadSql('transactions/get_transactions_paginated.sql')
+                transactions = await conn.query(txSql, [result.userId, limit, offset])
 
-            // Get total count
-            const countSql = await loadSql('transactions/count_transactions.sql')
-            const countResult = await pool.query(countSql, [result.userId])
-            total = Number(countResult[0]?.total || 0)
-        }
+                // Get total count
+                const countSql = await loadSql('transactions/count_transactions.sql')
+                const countResult = await conn.query(countSql, [result.userId])
+                total = Number(countResult[0]?.total || 0)
+            }
+
+            return { transactions, total }
+        })
 
         // Format date as local string to prevent UTC conversion during JSON serialization
         function formatLocalDate(date: Date | string): string {
@@ -58,7 +63,7 @@ export default defineEventHandler(async (event) => {
         }
 
         return {
-            transactions: transactions.map((tx: any) => ({
+            transactions: data.transactions.map((tx: any) => ({
                 id: tx.id,
                 title: tx.title,
                 amountFrom: Number(tx.amountFrom),
@@ -72,9 +77,9 @@ export default defineEventHandler(async (event) => {
             pagination: {
                 page,
                 limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-                hasMore: page * limit < total
+                total: data.total,
+                totalPages: Math.ceil(data.total / limit),
+                hasMore: page * limit < data.total
             }
         }
     } catch (error: any) {

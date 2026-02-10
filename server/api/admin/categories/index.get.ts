@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,25 +14,25 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const categories = await withConnection(async (conn) => {
+            const [caller] = await conn.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
+            if (!caller || caller.is_admin !== 1) {
+                throw createError({ statusCode: 403, message: 'Accesso negato' })
+            }
 
-        const [caller] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [result.userId])
-        if (!caller || caller.is_admin !== 1) {
-            throw createError({ statusCode: 403, message: 'Accesso negato' })
-        }
+            const rows = await conn.query(
+                'SELECT id, parent_id, title, sort_order, is_active, is_automotive FROM categories WHERE user_id IS NULL ORDER BY sort_order, title'
+            )
 
-        const rows = await pool.query(
-            'SELECT id, parent_id, title, sort_order, is_active, is_automotive FROM categories WHERE user_id IS NULL ORDER BY sort_order, title'
-        )
-
-        const categories = (rows as any[]).map((row: any) => ({
-            id: row.id,
-            parentId: row.parent_id,
-            title: row.title,
-            sortOrder: row.sort_order,
-            isActive: !!row.is_active,
-            isAutomotive: !!row.is_automotive
-        }))
+            return (rows as any[]).map((row: any) => ({
+                id: row.id,
+                parentId: row.parent_id,
+                title: row.title,
+                sortOrder: row.sort_order,
+                isActive: !!row.is_active,
+                isAutomotive: !!row.is_automotive
+            }))
+        })
 
         return { categories }
     } catch (error: any) {

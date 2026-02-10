@@ -1,3 +1,5 @@
+import { withConnection } from '../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -12,7 +14,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
         const body = await readBody(event)
 
         const {
@@ -26,20 +27,22 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Campi obbligatori mancanti' })
         }
 
-        const insertResult = await pool.query(
-            `INSERT INTO transaction_schedules
-                (title, amount_from, amount_to, from_account_id, to_account_id,
-                 category_id, project_id, payee_id, currency_id, user_id,
-                 start_date, end_date, frequency, next_transaction_date,
-                 notes, is_transfer, is_automotive, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                title, amountFrom, amountTo || null, fromAccountId, toAccountId || null,
-                categoryId || null, projectId || null, payeeId || null, currencyId || 1, result.userId,
-                startDate, endDate || null, frequency, nextTransactionDate,
-                notes || null, isTransfer ? 1 : 0, isAutomotive ? 1 : 0, isActive !== false ? 1 : 0
-            ]
-        )
+        const insertResult = await withConnection(async (conn) => {
+            return await conn.query(
+                `INSERT INTO transaction_schedules
+                    (title, amount_from, amount_to, from_account_id, to_account_id,
+                     category_id, project_id, payee_id, currency_id, user_id,
+                     start_date, end_date, frequency, next_transaction_date,
+                     notes, is_transfer, is_automotive, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    title, amountFrom, amountTo || null, fromAccountId, toAccountId || null,
+                    categoryId || null, projectId || null, payeeId || null, currencyId || 1, result.userId,
+                    startDate, endDate || null, frequency, nextTransactionDate,
+                    notes || null, isTransfer ? 1 : 0, isAutomotive ? 1 : 0, isActive !== false ? 1 : 0
+                ]
+            )
+        })
 
         return { success: true, id: Number(insertResult.insertId) }
     } catch (error: any) {

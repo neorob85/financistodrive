@@ -1,3 +1,5 @@
+import { withConnection } from '../../../utils/db'
+
 export default defineEventHandler(async (event) => {
     const cookieName = getSessionCookieName()
     const token = getCookie(event, cookieName)
@@ -17,37 +19,38 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const pool = await getPool()
+        const data = await withConnection(async (conn) => {
+            // Verify vehicle belongs to user
+            const [vehicle] = await conn.query(
+                `SELECT id FROM vehicles WHERE id = ? AND user_id = ?`,
+                [vehicleId, result.userId]
+            )
+            if (!vehicle) {
+                throw createError({ statusCode: 404, message: 'Veicolo non trovato' })
+            }
 
-        // Verify vehicle belongs to user
-        const [vehicle] = await pool.query(
-            `SELECT id FROM vehicles WHERE id = ? AND user_id = ?`,
-            [vehicleId, result.userId]
-        )
-        if (!vehicle) {
-            throw createError({ statusCode: 404, message: 'Veicolo non trovato' })
-        }
-
-        const rows = await pool.query(
-            `SELECT t.id, t.title, t.amount_from AS amountFrom, t.amount_to AS amountTo,
-                    t.transaction_date AS transactionDate,
-                    t.to_account_id AS toAccountId,
-                    c.title AS categoryTitle,
-                    a.title AS accountTitle,
-                    CASE
-                        WHEN fl.id IS NOT NULL THEN 'fuel'
-                        WHEN ml.id IS NOT NULL THEN 'maintenance'
-                        ELSE 'other'
-                    END AS logType
-             FROM transactions t
-             LEFT JOIN categories c ON t.category_id = c.id
-             LEFT JOIN accounts a ON t.from_account_id = a.id
-             LEFT JOIN fuels_logs fl ON fl.transaction_id = t.id AND fl.vehicle_id = ?
-             LEFT JOIN maintenances_logs ml ON ml.transaction_id = t.id AND ml.vehicle_id = ?
-             WHERE t.user_id = ? AND (fl.id IS NOT NULL OR ml.id IS NOT NULL)
-             ORDER BY t.transaction_date DESC`,
-            [vehicleId, vehicleId, result.userId]
-        )
+            const rows = await conn.query(
+                `SELECT t.id, t.title, t.amount_from AS amountFrom, t.amount_to AS amountTo,
+                        t.transaction_date AS transactionDate,
+                        t.to_account_id AS toAccountId,
+                        c.title AS categoryTitle,
+                        a.title AS accountTitle,
+                        CASE
+                            WHEN fl.id IS NOT NULL THEN 'fuel'
+                            WHEN ml.id IS NOT NULL THEN 'maintenance'
+                            ELSE 'other'
+                        END AS logType
+                 FROM transactions t
+                 LEFT JOIN categories c ON t.category_id = c.id
+                 LEFT JOIN accounts a ON t.from_account_id = a.id
+                 LEFT JOIN fuels_logs fl ON fl.transaction_id = t.id AND fl.vehicle_id = ?
+                 LEFT JOIN maintenances_logs ml ON ml.transaction_id = t.id AND ml.vehicle_id = ?
+                 WHERE t.user_id = ? AND (fl.id IS NOT NULL OR ml.id IS NOT NULL)
+                 ORDER BY t.transaction_date DESC`,
+                [vehicleId, vehicleId, result.userId]
+            )
+            return rows
+        })
 
         // Format date as local string to prevent UTC conversion during JSON serialization
         function formatLocalDate(date: Date | string): string {
@@ -62,7 +65,7 @@ export default defineEventHandler(async (event) => {
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
         }
 
-        const transactions = (rows as any[]).map((r: any) => ({
+        const transactions = (data as any[]).map((r: any) => ({
             id: r.id,
             title: r.title,
             amountFrom: parseFloat(r.amountFrom),
