@@ -231,8 +231,11 @@
                     Nessuna transazione
                 </div>
                 <div v-else class="transactions-list">
-                    <TransactionCard v-for="tx in transactions" :key="tx.id" :transaction="tx"
-                        @click="openDetail(tx.id)" />
+                    <template v-for="group in groupedTransactions" :key="group.label">
+                        <PeriodSeparator :label="group.label" :count="group.transactions.length" :balance="group.balance" />
+                        <TransactionCard v-for="tx in group.transactions" :key="tx.id" :transaction="tx"
+                            @click="openDetail(tx.id)" />
+                    </template>
                     <!-- Load more sentinel -->
                     <div v-if="hasMoreTransactions" class="load-more" ref="loadMoreRef">
                         <div v-if="loadingMoreTransactions" class="spinner-sm"></div>
@@ -410,6 +413,32 @@ const hasMoreTransactions = ref(true)
 const txPage = ref(1)
 const txLimit = 20
 const loadMoreRef = ref<HTMLElement | null>(null)
+
+interface TransactionGroup {
+    label: string
+    transactions: VehicleTransaction[]
+    balance: number
+}
+
+const groupedTransactions = computed(() => {
+    const groups: TransactionGroup[] = []
+    const currentYear = new Date().getFullYear()
+    let currentGroup: TransactionGroup | null = null
+
+    for (const tx of transactions.value) {
+        const txYear = new Date(tx.transactionDate).getFullYear()
+        const label = txYear === currentYear ? "Quest'anno" : String(txYear)
+
+        if (!currentGroup || currentGroup.label !== label) {
+            currentGroup = { label, transactions: [], balance: 0 }
+            groups.push(currentGroup)
+        }
+        currentGroup.transactions.push(tx)
+        currentGroup.balance += tx.amountFrom
+    }
+
+    return groups
+})
 
 // Detail modal
 const showDetail = ref(false)

@@ -1,5 +1,5 @@
 <template>
-  <div class="transaction-card" @click="$emit('click')">
+  <div class="transaction-card" :class="{ 'card-maintenance': transaction.logType === 'maintenance' }" @click="$emit('click')">
     <!-- Date badge -->
     <div class="tx-date-badge" :class="transactionType">
       <span class="tx-day">{{ dayNumber }}</span>
@@ -118,6 +118,11 @@ const txTime = computed(() => {
 .transaction-card:hover {
   transform: translateX(4px);
   box-shadow: var(--shadow-lg);
+}
+
+.transaction-card.card-maintenance {
+  border-left: 3px solid rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), var(--color-bg-card));
 }
 
 .tx-date-badge {
