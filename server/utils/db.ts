@@ -18,16 +18,16 @@ export async function getPool(): Promise<mariadb.Pool> {
         password: config.password,
         database: useRuntimeConfig().dbName as string,
         connectionLimit: 5,
-        // Timeout per connessioni inattive (30 secondi) - rilascia connessioni non usate
-        idleTimeout: 30000,
+        // Timeout per connessioni inattive (60 secondi) - rilascia connessioni non usate
+        idleTimeout: 60000,
         // Timeout per acquisire una connessione (10 secondi)
         acquireTimeout: 10000,
-        // Mantieni almeno 0 connessioni attive (crea su richiesta)
-        minimumIdle: 0,
+        // Timeout per stabilire una nuova connessione (5 secondi)
+        connectTimeout: 5000,
+        // Mantieni almeno 1 connessione attiva per evitare cold starts
+        minimumIdle: 1,
         // Timeout per connessioni che non vengono restituite al pool
-        leakDetectionTimeout: 60000,
-        // Ricrea connessioni dopo un errore di rete
-        resetAfterUse: true
+        leakDetectionTimeout: 60000
     })
 
     return pool
@@ -72,8 +72,12 @@ const CONNECTION_ERROR_CODES = [
     'ER_CON_COUNT_ERROR',
     'ER_SERVER_SHUTDOWN',
     'ER_NET_READ_ERROR',
-    'ER_NET_WRITE_ERROR'
+    'ER_NET_WRITE_ERROR',
+    'ER_GET_CONNECTION_TIMEOUT'
 ]
+
+// Codici numerici errore MariaDB per problemi di connessione
+const CONNECTION_ERROR_NUMBERS = [45028]
 
 /**
  * Wrapper per operazioni database che gestisce automaticamente gli errori di connessione.
@@ -106,7 +110,8 @@ export async function withConnection<T>(
                 error.code === code ||
                 error.message?.includes(code) ||
                 error.errno === code
-            ) || error.fatal === true
+            ) || CONNECTION_ERROR_NUMBERS.includes(error.errno)
+                || error.fatal === true
 
             // Se è un errore di connessione e non abbiamo esaurito i tentativi, riprova
             if (isConnectionError && attempt < maxRetries) {
