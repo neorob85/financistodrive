@@ -67,23 +67,29 @@ export default defineEventHandler(async (event) => {
 
             const currencyId = currencyRow.id
 
-            // Validate odometer against adjacent refuels
-            if (type === 'fuel') {
-                const [prevRefuel] = await conn.query(
-                    `SELECT odometer FROM fuels_logs WHERE vehicle_id = ? AND date < ? ORDER BY date DESC LIMIT 1`,
-                    [vehicleId, transactionDate]
-                )
-                if (prevRefuel && odometer < prevRefuel.odometer) {
-                    throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere inferiore a quello del rifornimento precedente (${prevRefuel.odometer} km)` })
-                }
+            // Validate odometer against adjacent automotive transactions (fuel + maintenance)
+            const [prevEntry] = await conn.query(
+                `SELECT odometer FROM (
+                    SELECT odometer, date FROM fuels_logs WHERE vehicle_id = ? AND date < ?
+                    UNION ALL
+                    SELECT odometer, date FROM maintenances_logs WHERE vehicle_id = ? AND date < ?
+                ) AS combined ORDER BY date DESC LIMIT 1`,
+                [vehicleId, transactionDate, vehicleId, transactionDate]
+            )
+            if (prevEntry && odometer < prevEntry.odometer) {
+                throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere inferiore a quello della transazione precedente (${prevEntry.odometer} km)` })
+            }
 
-                const [nextRefuel] = await conn.query(
-                    `SELECT odometer FROM fuels_logs WHERE vehicle_id = ? AND date > ? ORDER BY date ASC LIMIT 1`,
-                    [vehicleId, transactionDate]
-                )
-                if (nextRefuel && odometer > nextRefuel.odometer) {
-                    throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere superiore a quello del rifornimento successivo (${nextRefuel.odometer} km)` })
-                }
+            const [nextEntry] = await conn.query(
+                `SELECT odometer FROM (
+                    SELECT odometer, date FROM fuels_logs WHERE vehicle_id = ? AND date > ?
+                    UNION ALL
+                    SELECT odometer, date FROM maintenances_logs WHERE vehicle_id = ? AND date > ?
+                ) AS combined ORDER BY date ASC LIMIT 1`,
+                [vehicleId, transactionDate, vehicleId, transactionDate]
+            )
+            if (nextEntry && odometer > nextEntry.odometer) {
+                throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere superiore a quello della transazione successiva (${nextEntry.odometer} km)` })
             }
 
             // Create title for transaction
@@ -267,11 +273,22 @@ export default defineEventHandler(async (event) => {
                             )
 
                             if (mt && (mt.default_interval_km || mt.default_interval_months)) {
+                                // Use the latest maintenance log of this type (not necessarily the current one)
+                                const [latestLog] = await conn.query(
+                                    `SELECT date, odometer FROM maintenances_logs
+                                     WHERE vehicle_id = ? AND maintenance_type_id = ?
+                                     ORDER BY date DESC LIMIT 1`,
+                                    [vehicleId, item.typeId]
+                                )
+
+                                const refDate = latestLog ? latestLog.date : transactionDate
+                                const refOdometer = latestLog ? latestLog.odometer : odometer
+
                                 const nextMaintenanceDate = mt.default_interval_months
-                                    ? new Date(new Date(transactionDate).getTime() + mt.default_interval_months * 30.44 * 24 * 60 * 60 * 1000)
+                                    ? new Date(new Date(refDate).getTime() + mt.default_interval_months * 30.44 * 24 * 60 * 60 * 1000)
                                     : null
                                 const nextMaintenanceOdometer = mt.default_interval_km
-                                    ? odometer + mt.default_interval_km
+                                    ? refOdometer + mt.default_interval_km
                                     : null
                                 const nextAlertDate = (nextMaintenanceDate && mt.default_days_before_alert)
                                     ? new Date(nextMaintenanceDate.getTime() - mt.default_days_before_alert * 24 * 60 * 60 * 1000)
@@ -294,7 +311,7 @@ export default defineEventHandler(async (event) => {
                                             is_alert_sent = 0
                                          WHERE id = ?`,
                                         [
-                                            transactionDate, odometer,
+                                            refDate, refOdometer,
                                             nextMaintenanceDate, nextMaintenanceOdometer,
                                             nextAlertDate, nextAlertOdometer,
                                             existingAlert.id
@@ -307,7 +324,7 @@ export default defineEventHandler(async (event) => {
                                           next_maintenance_date, next_maintenance_odometer, next_alert_date, next_alert_odometer)
                                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                                         [
-                                            vehicleId, item.typeId, transactionDate, odometer,
+                                            vehicleId, item.typeId, refDate, refOdometer,
                                             nextMaintenanceDate, nextMaintenanceOdometer,
                                             nextAlertDate, nextAlertOdometer
                                         ]

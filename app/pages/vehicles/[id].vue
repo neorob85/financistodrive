@@ -224,15 +224,20 @@
             <!-- Transactions list -->
             <div class="transactions-section">
                 <h3 class="section-title-lg">Transazioni</h3>
-                <div v-if="loadingTransactions" class="loading-inline">
+                <div v-if="loadingTransactions && transactions.length === 0" class="loading-inline">
                     <div class="spinner-sm"></div>
                 </div>
-                <div v-else-if="transactions.length === 0" class="empty-state-sm">
+                <div v-else-if="!loadingTransactions && transactions.length === 0" class="empty-state-sm">
                     Nessuna transazione
                 </div>
                 <div v-else class="transactions-list">
                     <TransactionCard v-for="tx in transactions" :key="tx.id" :transaction="tx"
                         @click="openDetail(tx.id)" />
+                    <!-- Load more sentinel -->
+                    <div v-if="hasMoreTransactions" class="load-more" ref="loadMoreRef">
+                        <div v-if="loadingMoreTransactions" class="spinner-sm"></div>
+                        <span v-else>Scorri per caricare</span>
+                    </div>
                 </div>
             </div>
 
@@ -400,6 +405,11 @@ const consumptionPoints = ref<ConsumptionPoint[]>([])
 const vehicleAlerts = ref<VehicleAlert[]>([])
 const transactions = ref<VehicleTransaction[]>([])
 const loadingTransactions = ref(true)
+const loadingMoreTransactions = ref(false)
+const hasMoreTransactions = ref(true)
+const txPage = ref(1)
+const txLimit = 20
+const loadMoreRef = ref<HTMLElement | null>(null)
 
 // Detail modal
 const showDetail = ref(false)
@@ -567,15 +577,28 @@ async function loadConsumption() {
     }
 }
 
-async function loadTransactions() {
-    loadingTransactions.value = true
+async function loadTransactions(pageNum: number = 1, append = false) {
+    if (append) {
+        loadingMoreTransactions.value = true
+    } else {
+        loadingTransactions.value = true
+    }
     try {
-        const data = await $fetch<{ transactions: VehicleTransaction[] }>(`/api/vehicles/${vehicleId.value}/transactions`)
-        transactions.value = data.transactions
+        const data = await $fetch<{ transactions: VehicleTransaction[], pagination: { hasMore: boolean } }>(
+            `/api/vehicles/${vehicleId.value}/transactions`,
+            { query: { page: pageNum, limit: txLimit } }
+        )
+        if (append) {
+            transactions.value.push(...data.transactions)
+        } else {
+            transactions.value = data.transactions
+        }
+        hasMoreTransactions.value = data.pagination.hasMore
     } catch {
         // silently ignore
     } finally {
         loadingTransactions.value = false
+        loadingMoreTransactions.value = false
     }
 }
 
@@ -640,7 +663,8 @@ async function deleteTransaction() {
         closeDetail()
         // Refresh list
         loadVehicle()
-        loadTransactions()
+        txPage.value = 1
+        loadTransactions(1)
         loadConsumption()
         loadAlerts()
     } catch (error) {
@@ -649,12 +673,32 @@ async function deleteTransaction() {
     }
 }
 
+// Infinite scroll for transactions
+function setupInfiniteScroll() {
+    const observer = new IntersectionObserver(
+        (entries) => {
+            if (entries[0]?.isIntersecting && hasMoreTransactions.value && !loadingMoreTransactions.value) {
+                txPage.value++
+                loadTransactions(txPage.value, true)
+            }
+        },
+        { threshold: 0.1 }
+    )
+
+    watch(loadMoreRef, (el) => {
+        if (el) observer.observe(el)
+    })
+
+    onUnmounted(() => observer.disconnect())
+}
+
 onMounted(async () => {
     await loadVehicle()
     if (vehicle.value) {
         loadAlerts()
         loadConsumption()
-        loadTransactions()
+        loadTransactions(1)
+        setupInfiniteScroll()
     }
 })
 
@@ -1060,6 +1104,15 @@ function createAutomotiveTransaction() {
     display: flex;
     justify-content: center;
     padding: var(--space-lg);
+}
+
+.load-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
 }
 
 .empty-state-sm {

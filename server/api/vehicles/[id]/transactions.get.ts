@@ -18,6 +18,11 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: 'ID richiesto' })
     }
 
+    const query = getQuery(event)
+    const page = Math.max(1, parseInt(query.page as string) || 1)
+    const limit = Math.min(50, Math.max(1, parseInt(query.limit as string) || 20))
+    const offset = (page - 1) * limit
+
     try {
         const data = await withConnection(async (conn) => {
             // Verify vehicle belongs to user
@@ -49,8 +54,9 @@ export default defineEventHandler(async (event) => {
                  LEFT JOIN maintenances_logs ml ON ml.transaction_id = t.id AND ml.vehicle_id = ?
                  WHERE t.user_id = ? AND (fl.id IS NOT NULL OR ml.id IS NOT NULL)
                  GROUP BY t.id
-                 ORDER BY t.transaction_date DESC`,
-                [vehicleId, vehicleId, result.userId]
+                 ORDER BY t.transaction_date DESC
+                 LIMIT ? OFFSET ?`,
+                [vehicleId, vehicleId, result.userId, limit + 1, offset]
             )
             return rows
         })
@@ -68,7 +74,11 @@ export default defineEventHandler(async (event) => {
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
         }
 
-        const transactions = (data as any[]).map((r: any) => ({
+        const allRows = data as any[]
+        const hasMore = allRows.length > limit
+        const pageRows = hasMore ? allRows.slice(0, limit) : allRows
+
+        const transactions = pageRows.map((r: any) => ({
             id: r.id,
             title: r.title,
             amountFrom: parseFloat(r.amountFrom),
@@ -82,7 +92,7 @@ export default defineEventHandler(async (event) => {
             averageConsumption: r.averageConsumption ? Math.round(parseFloat(r.averageConsumption) * 100) / 100 : null
         }))
 
-        return { transactions }
+        return { transactions, pagination: { hasMore } }
     } catch (error: any) {
         if (error.statusCode) throw error
         throw createError({ statusCode: 500, message: error.message })

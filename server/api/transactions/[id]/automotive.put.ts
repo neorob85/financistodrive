@@ -72,23 +72,29 @@ export default defineEventHandler(async (event) => {
             const oldAmountFrom = existingTx.amount_from
             const oldFromAccountId = existingTx.from_account_id
 
-            // Validate odometer against adjacent refuels
-            if (type === 'fuel') {
-                const [prevRefuel] = await conn.query(
-                    `SELECT odometer FROM fuels_logs WHERE vehicle_id = ? AND transaction_id != ? AND date < ? ORDER BY date DESC LIMIT 1`,
-                    [vehicleId, transactionId, transactionDate]
-                )
-                if (prevRefuel && odometer < prevRefuel.odometer) {
-                    throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere inferiore a quello del rifornimento precedente (${prevRefuel.odometer} km)` })
-                }
+            // Validate odometer against adjacent automotive transactions (fuel + maintenance)
+            const [prevEntry] = await conn.query(
+                `SELECT odometer FROM (
+                    SELECT odometer, date FROM fuels_logs WHERE vehicle_id = ? AND transaction_id != ? AND date < ?
+                    UNION ALL
+                    SELECT odometer, date FROM maintenances_logs WHERE vehicle_id = ? AND transaction_id != ? AND date < ?
+                ) AS combined ORDER BY date DESC LIMIT 1`,
+                [vehicleId, transactionId, transactionDate, vehicleId, transactionId, transactionDate]
+            )
+            if (prevEntry && odometer < prevEntry.odometer) {
+                throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere inferiore a quello della transazione precedente (${prevEntry.odometer} km)` })
+            }
 
-                const [nextRefuel] = await conn.query(
-                    `SELECT odometer FROM fuels_logs WHERE vehicle_id = ? AND transaction_id != ? AND date > ? ORDER BY date ASC LIMIT 1`,
-                    [vehicleId, transactionId, transactionDate]
-                )
-                if (nextRefuel && odometer > nextRefuel.odometer) {
-                    throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere superiore a quello del rifornimento successivo (${nextRefuel.odometer} km)` })
-                }
+            const [nextEntry] = await conn.query(
+                `SELECT odometer FROM (
+                    SELECT odometer, date FROM fuels_logs WHERE vehicle_id = ? AND transaction_id != ? AND date > ?
+                    UNION ALL
+                    SELECT odometer, date FROM maintenances_logs WHERE vehicle_id = ? AND transaction_id != ? AND date > ?
+                ) AS combined ORDER BY date ASC LIMIT 1`,
+                [vehicleId, transactionId, transactionDate, vehicleId, transactionId, transactionDate]
+            )
+            if (nextEntry && odometer > nextEntry.odometer) {
+                throw createError({ statusCode: 400, message: `Il chilometraggio (${odometer}) non può essere superiore a quello della transazione successiva (${nextEntry.odometer} km)` })
             }
 
             // Create title for transaction
