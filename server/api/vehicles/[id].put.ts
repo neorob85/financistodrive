@@ -27,7 +27,10 @@ export default defineEventHandler(async (event) => {
 
     try {
         await withConnection(async (conn) => {
-            return await conn.query(
+
+
+            // 1. Update vehicle details
+            await conn.query(
                 `UPDATE vehicles 
        SET brand = ?, model = ?, license_plate = ?, year = ?, fuel_id = ?, initial_mileage = ?, notes = ?, is_active = ?
        WHERE id = ? AND user_id = ?`,
@@ -43,6 +46,33 @@ export default defineEventHandler(async (event) => {
                     id,
                     result.userId
                 ]
+            )
+
+            const [maxFuel] = await conn.query(
+                `SELECT MAX(odometer) as max_odometer FROM fuels_logs WHERE vehicle_id = ?`,
+                [id]
+            ) as any[]
+
+            const [maxMaint] = await conn.query(
+                `SELECT MAX(odometer) as max_odometer FROM maintenances_logs WHERE vehicle_id = ?`,
+                [id]
+            ) as any[]
+
+            const maxFuelOdometer = maxFuel?.max_odometer
+            const maxMaintOdometer = maxMaint?.max_odometer
+
+            const maxTxOdometer = Math.max(
+                maxFuelOdometer || 0,
+                maxMaintOdometer || 0
+            )
+
+            const newInitialMileage = Number(initialMileage || 0)
+            const newCurrentMileage = Math.max(newInitialMileage, maxTxOdometer)
+
+            // Update current_mileage
+            await conn.query(
+                `UPDATE vehicles SET current_mileage = ? WHERE id = ?`,
+                [newCurrentMileage, id]
             )
         })
 
