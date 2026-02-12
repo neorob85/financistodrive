@@ -294,7 +294,7 @@ function handleOutsideClick(e: Event) {
   border-radius: 50%;
   font-size: 0.8rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-on-accent);
 }
 
 .user-name {

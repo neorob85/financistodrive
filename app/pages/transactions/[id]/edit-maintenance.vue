@@ -6,18 +6,18 @@
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
             </button>
-            <h1>🔧 Modifica Manutenzione</h1>
+            <h1>🔧 {{ $t('transactions.editMaintenance') }}</h1>
             <div class="header-spacer"></div>
         </header>
 
         <div v-if="loading" class="loading-state">
             <div class="spinner"></div>
-            <p>Caricamento...</p>
+            <p>{{ $t('common.loading') }}</p>
         </div>
 
         <div v-else-if="loadError" class="error-state">
             <p>{{ loadError }}</p>
-            <button class="btn btn-secondary" @click="goBack">Torna indietro</button>
+            <button class="btn btn-secondary" @click="goBack">{{ $t('common.goBack') }}</button>
         </div>
 
         <form v-else @submit.prevent="handleSubmit" class="transaction-form">
@@ -31,15 +31,15 @@
 
             <!-- Date -->
             <div class="input-group">
-                <label for="date">Data *</label>
+                <label for="date">{{ $t('transactions.date') }} *</label>
                 <input id="date" v-model="form.transactionDate" type="datetime-local" class="input-field" required>
             </div>
 
             <!-- Vehicle Selection -->
             <div class="input-group">
-                <label for="vehicle">Veicolo *</label>
+                <label for="vehicle">{{ $t('automotive.vehicle') }} *</label>
                 <select id="vehicle" v-model="form.vehicleId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona veicolo --</option>
+                    <option :value="null" disabled>{{ $t('automotive.selectVehicle') }}</option>
                     <option v-for="v in vehicles.filter(v => v.isActive || v.id === form.vehicleId)" :key="v.id"
                         :value="v.id">
                         {{ v.brand }} {{ v.model }} ({{ v.licensePlate }})
@@ -49,16 +49,16 @@
 
             <!-- Odometer -->
             <div class="input-group">
-                <label for="odometer">Chilometraggio *</label>
+                <label for="odometer">{{ $t('automotive.mileage') }} *</label>
                 <input id="odometer" v-model.number="form.odometer" type="number" min="0" class="input-field"
                     placeholder="es. 45000" required>
             </div>
 
             <!-- Category -->
             <div class="input-group">
-                <label for="category">Categoria</label>
+                <label for="category">{{ $t('transactions.category') }}</label>
                 <select id="category" v-model="form.categoryId" class="input-field">
-                    <option :value="null">-- Nessuna categoria --</option>
+                    <option :value="null">{{ $t('transactions.noCategory') }}</option>
                     <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
                         {{ cat.indent }}{{ cat.title }}
                     </option>
@@ -68,21 +68,21 @@
             <!-- Maintenance Types Section -->
             <div class="maintenance-types-section">
                 <div class="section-header">
-                    <label>Tipi di Manutenzione</label>
+                    <label>{{ $t('automotive.maintenanceTypesLabel') }}</label>
                     <button type="button" class="add-type-btn" @click="addMaintenanceItem">
-                        + Aggiungi tipo
+                        {{ $t('automotive.addType') }}
                     </button>
                 </div>
 
                 <!-- Maintenance items list -->
                 <div v-if="maintenanceItems.length === 0" class="no-items-hint">
-                    Nessun tipo specificato. Verrà salvata una manutenzione generica.
+                    {{ $t('automotive.noTypesHintEdit') }}
                 </div>
 
                 <div v-for="(item, index) in maintenanceItems" :key="index" class="maintenance-item">
                     <div class="item-row">
                         <select v-model="item.typeId" class="input-field item-type">
-                            <option :value="null">-- Tipo --</option>
+                            <option :value="null">{{ $t('automotive.selectType') }}</option>
                             <option v-for="mt in filteredMaintenanceTypes" :key="mt.id" :value="mt.id">{{ mt.title }}
                             </option>
                         </select>
@@ -91,38 +91,38 @@
                         <button type="button" class="remove-item-btn" @click="removeMaintenanceItem(index)">×</button>
                     </div>
                     <input v-model="item.description" type="text" class="input-field item-description"
-                        placeholder="Descrizione (opzionale)">
+                        :placeholder="$t('automotive.descriptionOptional')">
                 </div>
 
                 <!-- Balance indicator -->
                 <div v-if="maintenanceItems.length > 0" class="amount-balance"
                     :class="{ balanced: isMaintenanceBalanced, unbalanced: !isMaintenanceBalanced }">
-                    <span v-if="isMaintenanceBalanced" class="balance-ok">✓ Importi bilanciati</span>
+                    <span v-if="isMaintenanceBalanced" class="balance-ok">✓ {{ $t('automotive.amountsBalanced') }}</span>
                     <span v-else class="balance-diff">
-                        Differenza: {{ maintenanceAmountDiff > 0 ? '+' : '' }}{{ maintenanceAmountDiff.toFixed(2) }} €
+                        {{ $t('automotive.difference') }}: {{ maintenanceAmountDiff > 0 ? '+' : '' }}{{ maintenanceAmountDiff.toFixed(2) }} €
                     </span>
                 </div>
             </div>
 
             <!-- Description (when no items) -->
             <div v-if="maintenanceItems.length === 0" class="input-group">
-                <label for="description">Descrizione *</label>
+                <label for="description">{{ $t('automotive.descriptionRequired') }} *</label>
                 <input id="description" v-model="form.description" type="text" class="input-field"
-                    placeholder="es. Tagliando annuale">
+                    :placeholder="$t('automotive.exampleAnnualService')">
             </div>
 
             <!-- Account -->
             <div class="input-group">
-                <label for="account">Conto *</label>
+                <label for="account">{{ $t('transactions.account') }} *</label>
                 <select id="account" v-model="form.fromAccountId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona conto --</option>
+                    <option :value="null" disabled>{{ $t('transactions.selectAccount') }}</option>
                     <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.title }}</option>
                 </select>
             </div>
 
             <!-- Attachments Section -->
             <div class="attachments-section">
-                <label>Allegati</label>
+                <label>{{ $t('transactions.attachments') }}</label>
 
                 <!-- Existing attachments -->
                 <div v-if="attachments.length > 0" class="attachment-preview">
@@ -144,11 +144,11 @@
                         <input type="file" ref="fileInput" multiple accept="image/*,.pdf,.doc,.docx"
                             @change="handleFileSelect" hidden>
                         <span v-if="uploading" class="spinner-sm"></span>
-                        <span v-else>📁 File</span>
+                        <span v-else>📁 {{ $t('transactions.file') }}</span>
                     </label>
                     <button type="button" class="attachment-btn" @click="openCamera" :disabled="uploading">
                         <span v-if="uploading" class="spinner-sm"></span>
-                        <span v-else>📷 Foto</span>
+                        <span v-else>📷 {{ $t('transactions.photo') }}</span>
                     </button>
                 </div>
             </div>
@@ -159,9 +159,9 @@
 
             <!-- Notes -->
             <div class="input-group">
-                <label for="notes">Note</label>
+                <label for="notes">{{ $t('common.notes') }}</label>
                 <textarea id="notes" v-model="form.notes" class="input-field" rows="2"
-                    placeholder="Note aggiuntive..."></textarea>
+                    :placeholder="$t('common.additionalNotes')"></textarea>
             </div>
 
             <!-- Error message -->
@@ -169,11 +169,11 @@
 
             <!-- Actions -->
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" @click="goBack">Annulla</button>
+                <button type="button" class="btn btn-secondary" @click="goBack">{{ $t('common.cancel') }}</button>
                 <button type="submit" class="btn btn-primary"
                     :disabled="saving || (maintenanceItems.length > 0 && !isMaintenanceBalanced)">
                     <span v-if="saving" class="spinner"></span>
-                    Salva Modifiche
+                    {{ $t('common.saveChanges') }}
                 </button>
             </div>
         </form>
@@ -230,6 +230,7 @@ interface Attachment {
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const transactionId = computed(() => Number(route.params.id))
 
 const loading = ref(true)
@@ -356,7 +357,7 @@ async function loadData() {
         const tx = txRes.transaction
 
         if (!tx.isAutomotive || !tx.maintenanceLogs || tx.maintenanceLogs.length === 0) {
-            loadError.value = 'Questa non è una transazione manutenzione'
+            loadError.value = t('transactions.notMaintenanceTransaction')
             return
         }
 
@@ -401,7 +402,7 @@ async function loadData() {
         attachments.value = tx.attachments || []
 
     } catch (error: any) {
-        loadError.value = error.data?.message || 'Errore nel caricamento'
+        loadError.value = error.data?.message || t('transactions.loadTransactionError')
     } finally {
         loading.value = false
     }
@@ -409,22 +410,22 @@ async function loadData() {
 
 async function handleSubmit() {
     if (!form.value.vehicleId || !form.value.odometer || !form.value.fromAccountId || !form.value.transactionDate) {
-        formError.value = 'Compila tutti i campi obbligatori'
+        formError.value = t('common.required')
         return
     }
 
     if (!form.value.maintenanceAmount) {
-        formError.value = 'Inserisci l\'importo della manutenzione'
+        formError.value = t('automotive.enterMaintenanceAmount')
         return
     }
 
     if (maintenanceItems.value.length === 0 && !form.value.description) {
-        formError.value = 'Inserisci una descrizione per la manutenzione'
+        formError.value = t('automotive.enterDescription')
         return
     }
 
     if (maintenanceItems.value.length > 0 && !isMaintenanceBalanced.value) {
-        formError.value = 'La somma degli importi dei tipi deve essere uguale all\'importo totale'
+        formError.value = t('automotive.typesAmountMustMatch')
         return
     }
 
@@ -460,7 +461,7 @@ async function handleSubmit() {
 
         router.back()
     } catch (error: any) {
-        formError.value = error.data?.message || 'Errore nel salvataggio'
+        formError.value = error.data?.message || t('common.saveError')
     } finally {
         saving.value = false
     }
@@ -468,7 +469,7 @@ async function handleSubmit() {
 
 // Attachment functions
 function getFileName(path: string): string {
-    return path.split('/').pop() || 'allegato'
+    return path.split('/').pop() || t('transactions.attachments')
 }
 
 function triggerFileSelect() {
@@ -496,7 +497,7 @@ async function handleFileSelect(event: Event) {
             attachments.value = txData.transaction.attachments || []
         }
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel caricamento del file'
+        formError.value = error?.data?.message || t('transactions.fileUploadError')
     } finally {
         uploading.value = false
         if (input) input.value = ''
@@ -511,7 +512,7 @@ async function deleteAttachment(attachmentId: number) {
         })
         attachments.value = attachments.value.filter(a => a.id !== attachmentId)
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nell\'eliminazione dell\'allegato'
+        formError.value = error?.data?.message || t('transactions.fileDeleteError')
     } finally {
         deletingAttachment.value = null
     }
@@ -542,7 +543,7 @@ async function handleCameraCapture(event: Event) {
             attachments.value = txData.transaction.attachments || []
         }
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel caricamento della foto'
+        formError.value = error?.data?.message || t('transactions.photoUploadError')
     } finally {
         uploading.value = false
         if (input) input.value = ''
@@ -697,7 +698,7 @@ onMounted(() => {
 .add-type-btn {
     padding: var(--space-xs) var(--space-sm);
     background: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
     border: none;
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -806,7 +807,7 @@ onMounted(() => {
 
 .btn-primary {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

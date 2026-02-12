@@ -280,7 +280,7 @@ definePageMeta({
   layout: 'default'
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -403,7 +403,7 @@ const progressClass = computed(() => {
 })
 
 function formatProjectAmount(amount: number): string {
-  return amount.toLocaleString('it-IT', {
+  return amount.toLocaleString(locale.value, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
@@ -416,7 +416,7 @@ function formatAmount(amount: number, symbol: string = '€') {
 
 function formatFullDate(dateStr: string) {
   const date = new Date(dateStr)
-  return date.toLocaleDateString('it-IT', {
+  return date.toLocaleDateString(locale.value, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -654,15 +654,15 @@ onMounted(() => {
 }
 
 .progress-fill.safe {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
 }
 
 .progress-fill.warning {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-warning-light));
 }
 
 .progress-fill.over {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+  background: linear-gradient(90deg, var(--color-error), var(--color-error-light));
 }
 
 .progress-info {

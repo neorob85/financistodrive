@@ -6,18 +6,18 @@
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
             </button>
-            <h1>Modifica Transazione</h1>
+            <h1>{{ $t('transactions.edit') }}</h1>
             <div class="header-spacer"></div>
         </header>
 
         <div v-if="loading" class="loading-state">
             <div class="spinner-lg"></div>
-            <p>Caricamento...</p>
+            <p>{{ $t('common.loading') }}</p>
         </div>
 
         <div v-else-if="loadError" class="error-state">
             <p>{{ loadError }}</p>
-            <button class="btn btn-secondary" @click="goBack">Torna indietro</button>
+            <button class="btn btn-secondary" @click="goBack">{{ $t('vehicles.goBack') }}</button>
         </div>
 
         <form v-else @submit.prevent="handleSubmit" class="transaction-form">
@@ -27,17 +27,17 @@
                     <button type="button" class="type-btn" :class="{ active: transactionType === 'expense' }"
                         @click="transactionType = 'expense'">
                         <span class="type-icon">−</span>
-                        <span class="type-text">Uscita</span>
+                        <span class="type-text">{{ $t('transactions.expense') }}</span>
                     </button>
                     <button type="button" class="type-btn" :class="{ active: transactionType === 'income' }"
                         @click="transactionType = 'income'">
                         <span class="type-icon">+</span>
-                        <span class="type-text">Entrata</span>
+                        <span class="type-text">{{ $t('transactions.income') }}</span>
                     </button>
                     <button type="button" class="type-btn" :class="{ active: transactionType === 'transfer' }"
                         @click="transactionType = 'transfer'">
                         <span class="type-icon">⇄</span>
-                        <span class="type-text">Trasferimento</span>
+                        <span class="type-text">{{ $t('transactions.transfer') }}</span>
                     </button>
                 </div>
             </div>
@@ -54,21 +54,21 @@
 
             <!-- Date -->
             <div class="input-group">
-                <label for="date">Data *</label>
+                <label for="date">{{ $t('transactions.date') }} *</label>
                 <input id="date" v-model="form.transactionDate" type="datetime-local" class="input-field" required>
             </div>
 
             <!-- Title / Description -->
             <div class="input-group">
-                <label for="title">Descrizione *</label>
+                <label for="title">{{ $t('transactions.description') }} *</label>
                 <input id="title" v-model="form.title" type="text" class="input-field" required>
             </div>
 
             <!-- From Account -->
             <div class="input-group">
-                <label for="account">Conto *</label>
+                <label for="account">{{ $t('transactions.account') }} *</label>
                 <select id="account" v-model="form.fromAccountId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona conto --</option>
+                    <option :value="null" disabled>{{ $t('transactions.selectAccount') }}</option>
                     <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.title }}</option>
                 </select>
             </div>
@@ -77,15 +77,15 @@
             <div class="checkbox-row">
                 <label class="checkbox-label">
                     <input type="checkbox" v-model="isSplit" @change="handleSplitToggle">
-                    <span>Transazione Split</span>
+                    <span>{{ $t('transactions.splitTransaction') }}</span>
                 </label>
             </div>
 
             <!-- Category (if not transfer and not split) -->
             <div v-if="transactionType !== 'transfer' && !isSplit" class="input-group">
-                <label for="category">Categoria</label>
+                <label for="category">{{ $t('transactions.category') }}</label>
                 <select id="category" v-model="form.categoryId" class="input-field">
-                    <option :value="null">-- Nessuna categoria --</option>
+                    <option :value="null">{{ $t('transactions.noCategory') }}</option>
                     <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
                         {{ cat.indent }}{{ cat.title }}
                     </option>
@@ -94,9 +94,9 @@
 
             <!-- To Account (for transfers) -->
             <div v-if="transactionType === 'transfer'" class="input-group">
-                <label for="toAccount">Conto destinazione *</label>
+                <label for="toAccount">{{ $t('transactions.destinationAccount') }} *</label>
                 <select id="toAccount" v-model="form.toAccountId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona conto --</option>
+                    <option :value="null" disabled>{{ $t('transactions.selectAccount') }}</option>
                     <option v-for="acc in accounts.filter(a => a.id !== form.fromAccountId)" :key="acc.id"
                         :value="acc.id">
                         {{ acc.title }}
@@ -107,7 +107,7 @@
             <!-- Split items -->
             <div v-if="isSplit" class="split-section">
                 <div class="split-header">
-                    <span>Suddivisione</span>
+                    <span>{{ $t('transactions.subdivision') }}</span>
                     <span :class="{ 'amount-ok': splitBalanced, 'amount-error': !splitBalanced }">
                         {{ formatCurrency(totalSplitAmount) }} / {{ formatCurrency(form.amount) }}
                         {{ splitBalanced ? '✓' : '' }}
@@ -126,13 +126,13 @@
                         class="split-amount">
 
                     <select v-if="split.type === 'category'" v-model="split.categoryId" class="split-select">
-                        <option :value="null">Categoria</option>
+                        <option :value="null">{{ $t('transactions.category') }}</option>
                         <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
                             {{ cat.indent }}{{ cat.title }}
                         </option>
                     </select>
                     <select v-else v-model="split.toAccountId" class="split-select">
-                        <option :value="null">Conto</option>
+                        <option :value="null">{{ $t('transactions.account') }}</option>
                         <option v-for="acc in accounts.filter(a => a.id !== form.fromAccountId)" :key="acc.id"
                             :value="acc.id">
                             {{ acc.title }}
@@ -142,14 +142,14 @@
                     <button type="button" class="remove-split-btn" @click="removeSplit(index)">×</button>
                 </div>
 
-                <button type="button" class="add-split-btn" @click="addSplit">+ Aggiungi</button>
+                <button type="button" class="add-split-btn" @click="addSplit">{{ $t('transactions.addSplit') }}</button>
             </div>
 
             <!-- Project -->
             <div class="input-group">
-                <label for="project">Progetto</label>
+                <label for="project">{{ $t('transactions.project') }}</label>
                 <select id="project" v-model="form.projectId" class="input-field">
-                    <option :value="null">-- Nessun progetto --</option>
+                    <option :value="null">{{ $t('transactions.noProject') }}</option>
                     <option v-for="p in projects.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}
                     </option>
                 </select>
@@ -157,16 +157,16 @@
 
             <!-- Payee -->
             <div class="input-group">
-                <label for="payee">Beneficiario</label>
+                <label for="payee">{{ $t('transactions.payee') }}</label>
                 <select id="payee" v-model="form.payeeId" class="input-field">
-                    <option :value="null">-- Nessun beneficiario --</option>
+                    <option :value="null">{{ $t('transactions.noPayee') }}</option>
                     <option v-for="p in payees.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}</option>
                 </select>
             </div>
 
             <!-- Attachments Section -->
             <div class="attachments-section">
-                <label>Allegati</label>
+                <label>{{ $t('transactions.attachments') }}</label>
 
                 <!-- Existing attachments -->
                 <div v-if="attachments.length > 0" class="attachment-preview">
@@ -196,11 +196,11 @@
                         <input type="file" ref="fileInput" multiple accept="image/*,.pdf,.doc,.docx"
                             @change="handleFileSelect" hidden>
                         <span v-if="uploading" class="spinner-sm"></span>
-                        <span v-else>📁 File</span>
+                        <span v-else>📁 {{ $t('transactions.file') }}</span>
                     </label>
                     <button type="button" class="attachment-btn" @click="openCamera" :disabled="uploading">
                         <span v-if="uploading" class="spinner-sm"></span>
-                        <span v-else>📷 Foto</span>
+                        <span v-else>📷 {{ $t('transactions.photo') }}</span>
                     </button>
                 </div>
             </div>
@@ -211,7 +211,7 @@
 
             <!-- Notes -->
             <div class="input-group">
-                <label for="notes">Note</label>
+                <label for="notes">{{ $t('common.notes') }}</label>
                 <textarea id="notes" v-model="form.notes" class="input-field" rows="2"></textarea>
             </div>
 
@@ -220,10 +220,10 @@
 
             <!-- Actions -->
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" @click="goBack">Annulla</button>
+                <button type="button" class="btn btn-secondary" @click="goBack">{{ $t('common.cancel') }}</button>
                 <button type="submit" class="btn btn-primary" :disabled="saving || (isSplit && !splitBalanced)">
                     <span v-if="saving" class="spinner"></span>
-                    Salva Modifiche
+                    {{ $t('common.saveChanges') }}
                 </button>
             </div>
         </form>
@@ -307,6 +307,7 @@ interface TransactionDetail {
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const transactionId = computed(() => route.params.id as string)
 
 const accounts = ref<Account[]>([])
@@ -459,7 +460,7 @@ async function handleFileSelect(event: Event) {
             attachments.value = txData.transaction.attachments || []
         }
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel caricamento del file'
+        formError.value = error?.data?.message || t('transactions.fileUploadError')
     } finally {
         uploading.value = false
         // Reset input
@@ -476,7 +477,7 @@ async function deleteAttachment(attachmentId: number) {
         // Remove from local list
         attachments.value = attachments.value.filter(a => a.id !== attachmentId)
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nell\'eliminazione dell\'allegato'
+        formError.value = error?.data?.message || t('transactions.fileDeleteError')
     } finally {
         deletingAttachment.value = null
     }
@@ -511,7 +512,7 @@ async function handleCameraCapture(event: Event) {
             attachments.value = txData.transaction.attachments || []
         }
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel caricamento della foto'
+        formError.value = error?.data?.message || t('transactions.photoUploadError')
     } finally {
         uploading.value = false
         if (input) input.value = ''
@@ -524,17 +525,17 @@ function goBack() {
 
 async function handleSubmit() {
     if (!form.value.title || !form.value.amount || !form.value.fromAccountId || !form.value.transactionDate) {
-        formError.value = 'Compila tutti i campi obbligatori'
+        formError.value = t('common.required')
         return
     }
 
     if (transactionType.value === 'transfer' && !form.value.toAccountId) {
-        formError.value = 'Seleziona il conto destinazione'
+        formError.value = t('transactions.selectDestination')
         return
     }
 
     if (isSplit.value && !splitBalanced.value) {
-        formError.value = 'La somma degli split deve essere uguale all\'importo totale'
+        formError.value = t('transactions.splitMustEqual')
         return
     }
 
@@ -580,7 +581,7 @@ async function handleSubmit() {
 
         router.back()
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel salvataggio'
+        formError.value = error?.data?.message || t('common.saveError')
     } finally {
         saving.value = false
     }
@@ -657,7 +658,7 @@ async function loadData() {
         attachments.value = tx.attachments || []
     } catch (error: any) {
         console.error('Failed to load transaction:', error)
-        loadError.value = error?.data?.message || 'Errore nel caricamento della transazione'
+        loadError.value = error?.data?.message || t('transactions.loadTransactionError')
     } finally {
         loading.value = false
     }
@@ -929,7 +930,7 @@ onMounted(() => {
 
 .split-type-btn.active {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .split-amount {
@@ -1010,7 +1011,7 @@ onMounted(() => {
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

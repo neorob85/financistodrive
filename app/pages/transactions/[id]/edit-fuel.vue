@@ -6,18 +6,18 @@
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
             </button>
-            <h1>⛽ Modifica Rifornimento</h1>
+            <h1>⛽ {{ $t('transactions.editFuel') }}</h1>
             <div class="header-spacer"></div>
         </header>
 
         <div v-if="loading" class="loading-state">
             <div class="spinner"></div>
-            <p>Caricamento...</p>
+            <p>{{ $t('common.loading') }}</p>
         </div>
 
         <div v-else-if="loadError" class="error-state">
             <p>{{ loadError }}</p>
-            <button class="btn btn-secondary" @click="goBack">Torna indietro</button>
+            <button class="btn btn-secondary" @click="goBack">{{ $t('common.goBack') }}</button>
         </div>
 
         <form v-else @submit.prevent="handleSubmit" class="transaction-form">
@@ -31,15 +31,15 @@
 
             <!-- Date -->
             <div class="input-group">
-                <label for="date">Data *</label>
+                <label for="date">{{ $t('transactions.date') }} *</label>
                 <input id="date" v-model="form.transactionDate" type="datetime-local" class="input-field" required>
             </div>
 
             <!-- Vehicle Selection -->
             <div class="input-group">
-                <label for="vehicle">Veicolo *</label>
+                <label for="vehicle">{{ $t('automotive.vehicle') }} *</label>
                 <select id="vehicle" v-model="form.vehicleId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona veicolo --</option>
+                    <option :value="null" disabled>{{ $t('automotive.selectVehicle') }}</option>
                     <option v-for="v in vehicles.filter(v => v.isActive || v.id === form.vehicleId)" :key="v.id"
                         :value="v.id">
                         {{ v.brand }} {{ v.model }} ({{ v.licensePlate }})
@@ -49,30 +49,30 @@
 
             <!-- Odometer -->
             <div class="input-group">
-                <label for="odometer">Chilometraggio *</label>
+                <label for="odometer">{{ $t('automotive.mileage') }} *</label>
                 <input id="odometer" v-model.number="form.odometer" type="number" min="0" class="input-field"
                     placeholder="es. 45000" required>
             </div>
 
             <!-- Fuel Type -->
             <div class="input-group">
-                <label for="fuelType">Tipo carburante *</label>
+                <label for="fuelType">{{ $t('automotive.fuelType') }} *</label>
                 <select id="fuelType" v-model="form.fuelTypeId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona --</option>
+                    <option :value="null" disabled>{{ $t('common.select') }}</option>
                     <option v-for="f in fuels" :key="f.id" :value="f.id">{{ f.title }}</option>
                 </select>
             </div>
 
             <!-- Fuel Volume -->
             <div class="input-group">
-                <label for="fuelVolume">Litri</label>
+                <label for="fuelVolume">{{ $t('automotive.liters') }}</label>
                 <input id="fuelVolume" v-model.number="form.fuelVolume" type="number" step="0.01" min="0"
                     class="input-field" placeholder="es. 45.50" @input="onFuelFieldEdit('volume')">
             </div>
 
             <!-- Price per Liter -->
             <div class="input-group">
-                <label for="pricePerLiter">Prezzo/Litro (€)</label>
+                <label for="pricePerLiter">{{ $t('automotive.pricePerLiterFull') }}</label>
                 <input id="pricePerLiter" v-model.number="form.pricePerLiter" type="number" step="0.001" min="0"
                     class="input-field" placeholder="es. 1.789" @input="onFuelFieldEdit('price')">
             </div>
@@ -81,7 +81,7 @@
             <div class="checkbox-row">
                 <label class="checkbox-label">
                     <input type="checkbox" v-model="form.isFullTank">
-                    <span>Pieno completo</span>
+                    <span>{{ $t('automotive.fullTank') }}</span>
                 </label>
             </div>
 
@@ -89,24 +89,24 @@
             <div class="checkbox-row">
                 <label class="checkbox-label">
                     <input type="checkbox" v-model="form.isPreviousMissed">
-                    <span>Rifornimento precedente mancante</span>
+                    <span>{{ $t('automotive.previousRefuelingMissing') }}</span>
                 </label>
             </div>
 
             <!-- Account -->
             <div class="input-group">
-                <label for="account">Conto *</label>
+                <label for="account">{{ $t('transactions.account') }} *</label>
                 <select id="account" v-model="form.fromAccountId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona conto --</option>
+                    <option :value="null" disabled>{{ $t('transactions.selectAccount') }}</option>
                     <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.title }}</option>
                 </select>
             </div>
 
             <!-- Category -->
             <div class="input-group">
-                <label for="category">Categoria</label>
+                <label for="category">{{ $t('transactions.category') }}</label>
                 <select id="category" v-model="form.categoryId" class="input-field">
-                    <option :value="null">-- Nessuna categoria --</option>
+                    <option :value="null">{{ $t('transactions.noCategory') }}</option>
                     <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
                         {{ cat.indent }}{{ cat.title }}
                     </option>
@@ -115,7 +115,7 @@
 
             <!-- Attachments Section -->
             <div class="attachments-section">
-                <label>Allegati</label>
+                <label>{{ $t('transactions.attachments') }}</label>
 
                 <!-- Existing attachments -->
                 <div v-if="attachments.length > 0" class="attachment-preview">
@@ -137,11 +137,11 @@
                         <input type="file" ref="fileInput" multiple accept="image/*,.pdf,.doc,.docx"
                             @change="handleFileSelect" hidden>
                         <span v-if="uploading" class="spinner-sm"></span>
-                        <span v-else>📁 File</span>
+                        <span v-else>📁 {{ $t('transactions.file') }}</span>
                     </label>
                     <button type="button" class="attachment-btn" @click="openCamera" :disabled="uploading">
                         <span v-if="uploading" class="spinner-sm"></span>
-                        <span v-else>📷 Foto</span>
+                        <span v-else>📷 {{ $t('transactions.photo') }}</span>
                     </button>
                 </div>
             </div>
@@ -152,9 +152,9 @@
 
             <!-- Notes -->
             <div class="input-group">
-                <label for="notes">Note</label>
+                <label for="notes">{{ $t('common.notes') }}</label>
                 <textarea id="notes" v-model="form.notes" class="input-field" rows="2"
-                    placeholder="Note aggiuntive..."></textarea>
+                    :placeholder="$t('common.additionalNotes')"></textarea>
             </div>
 
             <!-- Error message -->
@@ -162,10 +162,10 @@
 
             <!-- Actions -->
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" @click="goBack">Annulla</button>
+                <button type="button" class="btn btn-secondary" @click="goBack">{{ $t('common.cancel') }}</button>
                 <button type="submit" class="btn btn-primary" :disabled="saving">
                     <span v-if="saving" class="spinner"></span>
-                    Salva Modifiche
+                    {{ $t('common.saveChanges') }}
                 </button>
             </div>
         </form>
@@ -215,6 +215,7 @@ interface Attachment {
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const transactionId = computed(() => Number(route.params.id))
 
 const loading = ref(true)
@@ -343,7 +344,7 @@ async function loadData() {
         const tx = txRes.transaction
 
         if (!tx.isAutomotive || !tx.fuelLog) {
-            loadError.value = 'Questa non è una transazione rifornimento'
+            loadError.value = t('transactions.notFuelTransaction')
             return
         }
 
@@ -377,7 +378,7 @@ async function loadData() {
         attachments.value = tx.attachments || []
 
     } catch (error: any) {
-        loadError.value = error.data?.message || 'Errore nel caricamento'
+        loadError.value = error.data?.message || t('transactions.loadTransactionError')
     } finally {
         loading.value = false
     }
@@ -385,12 +386,12 @@ async function loadData() {
 
 async function handleSubmit() {
     if (!form.value.vehicleId || !form.value.odometer || !form.value.fromAccountId || !form.value.transactionDate) {
-        formError.value = 'Compila tutti i campi obbligatori'
+        formError.value = t('common.required')
         return
     }
 
     if (!form.value.fuelTypeId || !form.value.fuelVolume || !form.value.pricePerLiter || !form.value.fuelTotal) {
-        formError.value = 'Compila almeno 2 campi tra Litri, Prezzo/Litro e Totale'
+        formError.value = t('transactions.fillFuelFields')
         return
     }
 
@@ -421,7 +422,7 @@ async function handleSubmit() {
 
         router.back()
     } catch (error: any) {
-        formError.value = error.data?.message || 'Errore nel salvataggio'
+        formError.value = error.data?.message || t('common.saveError')
     } finally {
         saving.value = false
     }
@@ -429,7 +430,7 @@ async function handleSubmit() {
 
 // Attachment functions
 function getFileName(path: string): string {
-    return path.split('/').pop() || 'allegato'
+    return path.split('/').pop() || t('transactions.attachments')
 }
 
 function triggerFileSelect() {
@@ -457,7 +458,7 @@ async function handleFileSelect(event: Event) {
             attachments.value = txData.transaction.attachments || []
         }
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel caricamento del file'
+        formError.value = error?.data?.message || t('transactions.fileUploadError')
     } finally {
         uploading.value = false
         if (input) input.value = ''
@@ -472,7 +473,7 @@ async function deleteAttachment(attachmentId: number) {
         })
         attachments.value = attachments.value.filter(a => a.id !== attachmentId)
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nell\'eliminazione dell\'allegato'
+        formError.value = error?.data?.message || t('transactions.fileDeleteError')
     } finally {
         deletingAttachment.value = null
     }
@@ -503,7 +504,7 @@ async function handleCameraCapture(event: Event) {
             attachments.value = txData.transaction.attachments || []
         }
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel caricamento della foto'
+        formError.value = error?.data?.message || t('transactions.photoUploadError')
     } finally {
         uploading.value = false
         if (input) input.value = ''
@@ -689,7 +690,7 @@ onMounted(() => {
 
 .btn-primary {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

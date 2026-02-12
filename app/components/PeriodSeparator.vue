@@ -2,7 +2,7 @@
   <div class="period-separator">
     <div class="period-label">{{ label }}</div>
     <div class="period-stats">
-      <span class="count">{{ count }} transazioni</span>
+      <span class="count">{{ count }} {{ $t('PeriodSeparator.transactions') }}</span>
       <span class="balance" :class="balanceClass">{{ formattedBalance }}</span>
     </div>
   </div>

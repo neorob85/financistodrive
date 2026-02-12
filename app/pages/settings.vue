@@ -642,7 +642,7 @@ function formatDate(dateStr: string | null): string {
   font-size: 0.8rem;
   border-radius: var(--radius-sm);
   border: none;
-  color: white;
+  color: var(--color-text-on-accent);
   cursor: pointer;
   font-family: inherit;
   font-weight: 500;
@@ -659,15 +659,15 @@ function formatDate(dateStr: string | null): string {
 }
 
 .btn-warning {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, var(--color-warning), var(--color-warning-light));
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--color-success), var(--color-success-light));
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, var(--color-error), var(--color-error-light));
 }
 
 .spinner {

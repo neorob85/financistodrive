@@ -79,7 +79,7 @@
                     </div>
 
                     <div class="input-group">
-                        <label for="password">{{ editingId ? $t('admin.passwordHint') : 'Password *' }}</label>
+                        <label for="password">{{ editingId ? $t('admin.passwordHint') : $t('login.password') + ' *' }}</label>
                         <input id="password" v-model="form.password" type="password" class="input-field"
                             :required="!editingId" minlength="6">
                     </div>
@@ -388,7 +388,7 @@ onMounted(async () => {
     border-radius: 50%;
     font-size: 0.9rem;
     font-weight: 600;
-    color: white;
+    color: var(--color-text-on-accent);
     flex-shrink: 0;
 }
 
@@ -442,7 +442,7 @@ onMounted(async () => {
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -593,7 +593,7 @@ onMounted(async () => {
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

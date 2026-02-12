@@ -6,13 +6,13 @@
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
             </button>
-            <h1>Modifica Schedulazione</h1>
+            <h1>{{ $t('transactions.editSchedule') }}</h1>
             <div class="header-spacer"></div>
         </header>
 
         <div v-if="loadingData" class="loading-state">
             <div class="spinner-lg"></div>
-            <p>Caricamento...</p>
+            <p>{{ $t('common.loading') }}</p>
         </div>
 
         <form v-else @submit.prevent="handleSubmit" class="transaction-form">
@@ -22,17 +22,17 @@
                     <button type="button" class="type-btn" :class="{ active: transactionType === 'expense' }"
                         @click="transactionType = 'expense'">
                         <span class="type-icon">−</span>
-                        <span class="type-text">Uscita</span>
+                        <span class="type-text">{{ $t('transactions.expense') }}</span>
                     </button>
                     <button type="button" class="type-btn" :class="{ active: transactionType === 'income' }"
                         @click="transactionType = 'income'">
                         <span class="type-icon">+</span>
-                        <span class="type-text">Entrata</span>
+                        <span class="type-text">{{ $t('transactions.income') }}</span>
                     </button>
                     <button type="button" class="type-btn" :class="{ active: transactionType === 'transfer' }"
                         @click="transactionType = 'transfer'">
                         <span class="type-icon">⇄</span>
-                        <span class="type-text">Trasferimento</span>
+                        <span class="type-text">{{ $t('transactions.transfer') }}</span>
                     </button>
                 </div>
             </div>
@@ -49,24 +49,24 @@
 
             <!-- Title -->
             <div class="input-group">
-                <label for="title">Descrizione *</label>
+                <label for="title">{{ $t('transactions.description') }} *</label>
                 <input id="title" v-model="form.title" type="text" class="input-field" required>
             </div>
 
             <!-- From Account -->
             <div class="input-group">
-                <label for="account">Conto *</label>
+                <label for="account">{{ $t('transactions.account') }} *</label>
                 <select id="account" v-model="form.fromAccountId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona conto --</option>
+                    <option :value="null" disabled>{{ $t('transactions.selectAccount') }}</option>
                     <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.title }}</option>
                 </select>
             </div>
 
             <!-- Category (if not transfer) -->
             <div v-if="transactionType !== 'transfer'" class="input-group">
-                <label for="category">Categoria</label>
+                <label for="category">{{ $t('transactions.category') }}</label>
                 <select id="category" v-model="form.categoryId" class="input-field">
-                    <option :value="null">-- Nessuna categoria --</option>
+                    <option :value="null">{{ $t('transactions.noCategory') }}</option>
                     <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
                         {{ cat.indent }}{{ cat.title }}
                     </option>
@@ -75,9 +75,9 @@
 
             <!-- To Account (for transfers) -->
             <div v-if="transactionType === 'transfer'" class="input-group">
-                <label for="toAccount">Conto destinazione *</label>
+                <label for="toAccount">{{ $t('transactions.destinationAccount') }} *</label>
                 <select id="toAccount" v-model="form.toAccountId" class="input-field" required>
-                    <option :value="null" disabled>-- Seleziona conto --</option>
+                    <option :value="null" disabled>{{ $t('transactions.selectAccount') }}</option>
                     <option v-for="acc in accounts.filter(a => a.id !== form.fromAccountId)" :key="acc.id"
                         :value="acc.id">
                         {{ acc.title }}
@@ -87,53 +87,53 @@
 
             <!-- Frequency -->
             <div class="input-group">
-                <label for="frequency">Frequenza *</label>
+                <label for="frequency">{{ $t('schedules.frequency') }} *</label>
                 <select id="frequency" v-model="form.frequency" class="input-field" required>
-                    <option value="" disabled>-- Seleziona frequenza --</option>
-                    <option value="DAILY">Giornaliera</option>
-                    <option value="WEEKLY">Settimanale</option>
-                    <option value="BIWEEKLY">Bisettimanale</option>
-                    <option value="MONTHLY">Mensile</option>
-                    <option value="BIMONTHLY">Bimestrale</option>
-                    <option value="QUARTERLY">Trimestrale</option>
-                    <option value="SEMIANNUAL">Semestrale</option>
-                    <option value="YEARLY">Annuale</option>
+                    <option value="" disabled>{{ $t('schedules.selectFrequency') }}</option>
+                    <option value="DAILY">{{ $t('schedules.daily') }}</option>
+                    <option value="WEEKLY">{{ $t('schedules.weekly') }}</option>
+                    <option value="BIWEEKLY">{{ $t('schedules.biweekly') }}</option>
+                    <option value="MONTHLY">{{ $t('schedules.monthly') }}</option>
+                    <option value="BIMONTHLY">{{ $t('schedules.bimonthly') }}</option>
+                    <option value="QUARTERLY">{{ $t('schedules.quarterly') }}</option>
+                    <option value="SEMIANNUAL">{{ $t('schedules.semiannual') }}</option>
+                    <option value="YEARLY">{{ $t('schedules.yearly') }}</option>
                 </select>
             </div>
 
             <!-- Start Date -->
             <div class="input-group">
-                <label for="startDate">Data inizio *</label>
+                <label for="startDate">{{ $t('schedules.startDate') }} *</label>
                 <input id="startDate" v-model="form.startDate" type="datetime-local" class="input-field" required>
             </div>
 
             <!-- Next Transaction Date -->
             <div class="input-group">
-                <label for="nextDate">Prossima esecuzione *</label>
+                <label for="nextDate">{{ $t('schedules.nextExecution') }} *</label>
                 <input id="nextDate" v-model="form.nextTransactionDate" type="datetime-local" class="input-field"
                     required>
             </div>
 
             <!-- End Date -->
             <div class="input-group">
-                <label for="endDate">Data fine (opzionale)</label>
+                <label for="endDate">{{ $t('schedules.endDateOptional') }}</label>
                 <input id="endDate" v-model="form.endDate" type="datetime-local" class="input-field">
             </div>
 
             <!-- Project -->
             <div class="input-group">
-                <label for="project">Progetto</label>
+                <label for="project">{{ $t('transactions.project') }}</label>
                 <select id="project" v-model="form.projectId" class="input-field">
-                    <option :value="null">-- Nessun progetto --</option>
+                    <option :value="null">{{ $t('transactions.noProject') }}</option>
                     <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.title }}</option>
                 </select>
             </div>
 
             <!-- Payee -->
             <div class="input-group">
-                <label for="payee">Beneficiario</label>
+                <label for="payee">{{ $t('transactions.payee') }}</label>
                 <select id="payee" v-model="form.payeeId" class="input-field">
-                    <option :value="null">-- Nessun beneficiario --</option>
+                    <option :value="null">{{ $t('transactions.noPayee') }}</option>
                     <option v-for="p in payees" :key="p.id" :value="p.id">{{ p.title }}</option>
                 </select>
             </div>
@@ -142,13 +142,13 @@
             <div class="checkbox-row">
                 <label class="checkbox-label">
                     <input type="checkbox" v-model="form.isActive">
-                    <span>Attiva</span>
+                    <span>{{ $t('schedules.activeStatus') }}</span>
                 </label>
             </div>
 
             <!-- Notes -->
             <div class="input-group">
-                <label for="notes">Note</label>
+                <label for="notes">{{ $t('common.notes') }}</label>
                 <textarea id="notes" v-model="form.notes" class="input-field" rows="2"></textarea>
             </div>
 
@@ -157,10 +157,10 @@
 
             <!-- Actions -->
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" @click="goBack">Annulla</button>
+                <button type="button" class="btn btn-secondary" @click="goBack">{{ $t('common.cancel') }}</button>
                 <button type="submit" class="btn btn-primary" :disabled="saving">
                     <span v-if="saving" class="spinner"></span>
-                    Salva
+                    {{ $t('common.save') }}
                 </button>
             </div>
         </form>
@@ -180,6 +180,7 @@ interface Project { id: number; title: string }
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const scheduleId = route.params.id as string
 
 const accounts = ref<Account[]>([])
@@ -263,12 +264,12 @@ function goBack() {
 
 async function handleSubmit() {
     if (!form.value.title || !form.value.amount || !form.value.fromAccountId || !form.value.startDate || !form.value.frequency || !form.value.nextTransactionDate) {
-        formError.value = 'Compila tutti i campi obbligatori'
+        formError.value = t('common.required')
         return
     }
 
     if (transactionType.value === 'transfer' && !form.value.toAccountId) {
-        formError.value = 'Seleziona il conto destinazione'
+        formError.value = t('transactions.selectDestination')
         return
     }
 
@@ -305,7 +306,7 @@ async function handleSubmit() {
 
         router.push('/schedules')
     } catch (error: any) {
-        formError.value = error?.data?.message || 'Errore nel salvataggio'
+        formError.value = error?.data?.message || t('common.saveError')
     } finally {
         saving.value = false
     }
@@ -346,7 +347,7 @@ async function loadData() {
         }
     } catch (error) {
         console.error('Failed to load data:', error)
-        formError.value = 'Errore nel caricamento dei dati'
+        formError.value = t('schedules.loadError')
     } finally {
         loadingData.value = false
     }
@@ -587,7 +588,7 @@ onMounted(() => loadData())
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

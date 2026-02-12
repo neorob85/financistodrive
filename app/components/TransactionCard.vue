@@ -43,6 +43,8 @@ interface Transaction {
   averageConsumption?: number | null
 }
 
+const { locale } = useI18n()
+
 const props = defineProps<{
   transaction: Transaction
 }>()
@@ -87,7 +89,7 @@ const dayNumber = computed(() => {
 
 const monthLabel = computed(() => {
   const date = parseLocalDate(props.transaction.transactionDate)
-  return date.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '').toUpperCase()
+  return date.toLocaleDateString(locale.value, { month: 'short' }).replace('.', '').toUpperCase()
 })
 
 const txYear = computed(() => {
@@ -97,7 +99,7 @@ const txYear = computed(() => {
 
 const txTime = computed(() => {
   const date = parseLocalDate(props.transaction.transactionDate)
-  return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
 })
 </script>
 

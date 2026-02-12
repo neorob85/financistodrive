@@ -532,7 +532,7 @@ onMounted(() => loadDropdownData())
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

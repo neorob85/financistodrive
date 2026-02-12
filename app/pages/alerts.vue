@@ -465,7 +465,7 @@ onMounted(() => fetchAlerts())
 .filter-chip.active {
     background: var(--color-accent);
     border-color: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 /* Period separator */
@@ -833,7 +833,7 @@ onMounted(() => fetchAlerts())
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:hover:not(:disabled) {

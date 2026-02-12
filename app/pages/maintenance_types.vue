@@ -125,7 +125,7 @@ definePageMeta({
     layout: 'default'
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 interface MaintenanceType {
     id: number
@@ -201,7 +201,7 @@ const groupedByVehicle = computed(() => {
 })
 
 function formatNumber(n: number) {
-    return n.toLocaleString('it-IT')
+    return n.toLocaleString(locale.value)
 }
 
 async function loadMaintenanceTypes() {
@@ -451,7 +451,7 @@ onMounted(async () => {
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -554,7 +554,7 @@ onMounted(async () => {
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

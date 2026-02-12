@@ -333,7 +333,7 @@ async function resetJwt() {
     } catch (error: any) {
         jwtMessage.value = {
             type: 'error',
-            text: error.data?.message || 'Errore nel reset del JWT'
+            text: error.data?.message || t('admin.jwtResetError')
         }
     } finally {
         resettingJwt.value = false
@@ -382,7 +382,7 @@ async function resetDatabase() {
     } catch (error: any) {
         resetMessage.value = {
             type: 'error',
-            text: error.data?.message || 'Errore nel reset del database'
+            text: error.data?.message || t('admin.dbResetError')
         }
     } finally {
         resettingDb.value = false
@@ -458,7 +458,7 @@ onMounted(() => loadConfig())
     display: flex; align-items: center; gap: var(--space-sm);
     font-family: inherit; font-size: 0.9rem;
 }
-.btn-primary { background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary)); border: none; color: white; }
+.btn-primary { background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary)); border: none; color: var(--color-text-on-accent); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-secondary { background: var(--color-bg-elevated); border: 1px solid var(--color-border); color: var(--color-text-secondary); }
 .btn-warning { background: var(--color-warning-bg); border: 1px solid var(--color-warning-border); color: var(--color-warning); }

@@ -3,7 +3,7 @@
     <!-- Background decoration -->
     <div class="bg-glow"></div>
     <div class="bg-glow bg-glow-2"></div>
-    
+
     <div class="setup-container animate-fade-in">
       <div class="glass-card setup-card">
         <!-- Header -->
@@ -22,7 +22,7 @@
             </svg>
           </div>
           <h1>{{ appName }}</h1>
-          <p class="subtitle">Configura la connessione al database per iniziare</p>
+          <p class="subtitle">{{ $t('setup.subtitle') }}</p>
         </div>
 
         <!-- Alert Messages -->
@@ -34,20 +34,20 @@
         <form @submit.prevent="handleInitialize" class="setup-form">
           <div class="form-grid">
             <div class="input-group">
-              <label for="host">Host</label>
-              <input 
+              <label for="host">{{ $t('setup.host') }}</label>
+              <input
                 id="host"
                 v-model="form.host"
                 type="text"
                 class="input-field"
-                placeholder="es. localhost o 192.168.1.100"
+                :placeholder="$t('setup.hostPlaceholder')"
                 required
               />
             </div>
 
             <div class="input-group">
-              <label for="port">Porta</label>
-              <input 
+              <label for="port">{{ $t('setup.port') }}</label>
+              <input
                 id="port"
                 v-model="form.port"
                 type="number"
@@ -58,8 +58,8 @@
             </div>
 
             <div class="input-group">
-              <label for="user">Username</label>
-              <input 
+              <label for="user">{{ $t('setup.username') }}</label>
+              <input
                 id="user"
                 v-model="form.user"
                 type="text"
@@ -70,8 +70,8 @@
             </div>
 
             <div class="input-group">
-              <label for="password">Password</label>
-              <input 
+              <label for="password">{{ $t('setup.password') }}</label>
+              <input
                 id="password"
                 v-model="form.password"
                 type="password"
@@ -82,25 +82,25 @@
           </div>
 
           <div class="form-actions">
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn btn-secondary"
               :disabled="loading"
               @click="handleTestConnection"
             >
               <span v-if="testingConnection" class="spinner"></span>
               <span v-else>🔌</span>
-              Test Connessione
+              {{ $t('setup.testConnection') }}
             </button>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               class="btn btn-primary"
               :disabled="loading"
             >
               <span v-if="initializing" class="spinner"></span>
               <span v-else>🚀</span>
-              Inizializza Database
+              {{ $t('setup.initializeDatabase') }}
             </button>
           </div>
         </form>
@@ -108,7 +108,7 @@
         <!-- Info -->
         <div class="setup-info">
           <p>
-            <strong>Nota:</strong> Verrà creato il database con tutte le tabelle necessarie. L'utente deve avere i permessi per creare database.
+            <strong>{{ $t('setup.note') }}</strong> {{ $t('setup.noteText') }}
           </p>
         </div>
       </div>
@@ -120,6 +120,7 @@
 const config = useRuntimeConfig()
 const appName = config.public.appName as string
 
+const { t } = useI18n()
 const router = useRouter()
 
 const form = ref({
@@ -146,14 +147,14 @@ async function handleTestConnection() {
     })
 
     if (result.success) {
-      message.value = { type: 'success', text: '✓ Connessione riuscita!' }
+      message.value = { type: 'success', text: '✓ ' + t('setup.connectionSuccess') }
     } else {
       message.value = { type: 'error', text: `✗ ${result.error}` }
     }
   } catch (error: any) {
-    message.value = { 
-      type: 'error', 
-      text: error.data?.message || 'Errore durante il test della connessione' 
+    message.value = {
+      type: 'error',
+      text: error.data?.message || t('setup.connectionError')
     }
   } finally {
     testingConnection.value = false
@@ -170,16 +171,16 @@ async function handleInitialize() {
       body: form.value
     })
 
-    message.value = { type: 'success', text: '✓ Database inizializzato con successo!' }
-    
+    message.value = { type: 'success', text: '✓ ' + t('setup.initSuccess') }
+
     // Redirect to home after a short delay
     setTimeout(() => {
       router.push('/')
     }, 1500)
   } catch (error: any) {
-    message.value = { 
-      type: 'error', 
-      text: error.data?.message || 'Errore durante l\'inizializzazione del database' 
+    message.value = {
+      type: 'error',
+      text: error.data?.message || t('setup.initError')
     }
   } finally {
     initializing.value = false
@@ -314,11 +315,11 @@ async function handleInitialize() {
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .setup-card {
     padding: var(--space-xl);
   }

@@ -232,6 +232,8 @@
 <script setup lang="ts">
 import { type PropType } from 'vue'
 
+const { locale } = useI18n()
+
 // Define interfaces if not auto-imported, but assuming they are available or define locally
 // For minimal duplication, we'll redefine needed structures or use `any` if Types are global, 
 // but better to be explicit.
@@ -281,7 +283,7 @@ function formatAmount(amount: number, symbol: string = '€') {
 
 function formatFullDate(dateStr: string) {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('it-IT', {
+    return date.toLocaleDateString(locale.value, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',

@@ -52,7 +52,7 @@ definePageMeta({
   layout: 'default'
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 interface Transaction {
   id: number
@@ -210,7 +210,7 @@ function formatAmount(amount: number, symbol: string = '€') {
 
 function formatFullDate(dateStr: string) {
   const date = new Date(dateStr)
-  return date.toLocaleDateString('it-IT', {
+  return date.toLocaleDateString(locale.value, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -443,7 +443,7 @@ function setupInfiniteScroll() {
 
 .fab-primary {
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
-  color: white;
+  color: var(--color-text-on-accent);
   box-shadow: var(--shadow-glow);
 }
 

@@ -592,7 +592,7 @@ onMounted(() => fetchSchedules())
 
 .fab-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
-    color: white;
+    color: var(--color-text-on-accent);
     box-shadow: var(--shadow-glow);
 }
 

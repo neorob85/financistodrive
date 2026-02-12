@@ -300,7 +300,7 @@ onMounted(() => loadItems())
     position: fixed; bottom: calc(70px + var(--space-lg)); right: var(--space-lg);
     width: 56px; height: 56px; border-radius: 50%;
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
-    border: none; color: white; display: flex; align-items: center; justify-content: center;
+    border: none; color: var(--color-text-on-accent); display: flex; align-items: center; justify-content: center;
     cursor: pointer; box-shadow: var(--shadow-glow);
     transition: transform 0.2s, box-shadow 0.2s; z-index: 50;
 }
@@ -343,7 +343,7 @@ onMounted(() => loadItems())
     display: flex; align-items: center; gap: var(--space-sm);
     font-family: inherit; font-size: 0.9rem;
 }
-.btn-primary { background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary)); border: none; color: white; }
+.btn-primary { background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary)); border: none; color: var(--color-text-on-accent); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-secondary { background: var(--color-bg-elevated); border: 1px solid var(--color-border); color: var(--color-text-secondary); }
 .btn-danger { background: var(--color-error-bg); border: 1px solid var(--color-error); color: var(--color-error); }

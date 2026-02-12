@@ -14,13 +14,13 @@
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                     </svg>
-                    Avvisi
+                    {{ $t('vehicles.alerts') }}
                 </button>
                 <button class="action-chip" @click="router.push('/maintenance_types')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                     </svg>
-                    Tipi manutenzione
+                    {{ $t('vehicles.maintenanceTypes') }}
                 </button>
             </div>
         </div>
@@ -50,13 +50,13 @@
                     </button>
                     <div class="card-badges">
                         <span v-if="!vehicle.isActive" class="inactive-badge">{{ $t('common.inactive') }}</span>
-                        <span v-if="vehicle.alertsOverdue > 0" class="alert-badge overdue" :title="vehicle.alertsOverdue + ' manutenzioni scadute'" @click.stop="router.push('/alerts')">
+                        <span v-if="vehicle.alertsOverdue > 0" class="alert-badge overdue" :title="$t('dashboard.overdueMaintenances', { count: vehicle.alertsOverdue })" @click.stop="router.push('/alerts')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                             </svg>
                             {{ vehicle.alertsOverdue }}
                         </span>
-                        <span v-if="vehicle.alertsUpcoming > 0" class="alert-badge upcoming" :title="vehicle.alertsUpcoming + ' manutenzioni in scadenza'" @click.stop="router.push('/alerts')">
+                        <span v-if="vehicle.alertsUpcoming > 0" class="alert-badge upcoming" :title="$t('dashboard.upcomingMaintenances', { count: vehicle.alertsUpcoming })" @click.stop="router.push('/alerts')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                             </svg>
@@ -171,7 +171,7 @@ definePageMeta({
     layout: 'default'
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
 interface Vehicle {
@@ -221,7 +221,7 @@ const form = ref({
 })
 
 function formatNumber(n: number) {
-    return n.toLocaleString('it-IT')
+    return n.toLocaleString(locale.value)
 }
 
 async function loadVehicles() {
@@ -585,7 +585,7 @@ onMounted(async () => {
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -707,7 +707,7 @@ onMounted(async () => {
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

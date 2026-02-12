@@ -59,7 +59,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const accountId = Number(route.params.id)
 
@@ -179,7 +179,7 @@ const groupedTransactions = computed(() => {
 function formatAmount(amount: number, symbol: string = '') {
     // If symbol provided in args use it, else if account present use account symbol
     const sym = symbol || (account.value?.currencySymbol || '€')
-    return Math.abs(amount).toLocaleString('it-IT', {
+    return Math.abs(amount).toLocaleString(locale.value, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     })

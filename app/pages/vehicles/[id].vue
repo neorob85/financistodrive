@@ -7,7 +7,7 @@
                 </svg>
             </button>
             <h1 v-if="vehicle">{{ vehicle.brand }} {{ vehicle.model }}</h1>
-            <h1 v-else>Dettaglio veicolo</h1>
+            <h1 v-else>{{ $t('vehicles.detail') }}</h1>
             <div class="header-spacer"></div>
         </header>
 
@@ -17,7 +17,7 @@
 
         <div v-else-if="loadError" class="error-state">
             <p>{{ loadError }}</p>
-            <button class="btn btn-secondary" @click="goBack">Torna indietro</button>
+            <button class="btn btn-secondary" @click="goBack">{{ $t('vehicles.goBack') }}</button>
         </div>
 
         <div v-else-if="vehicle" class="detail-content">
@@ -36,7 +36,7 @@
                                 <path
                                     d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                             </svg>
-                            {{ vehicle.alertsOverdue }} scadute
+                            {{ vehicle.alertsOverdue }} {{ $t('vehicles.overdue') }}
                         </span>
                         <span v-if="vehicle.alertsUpcoming > 0" class="alert-badge upcoming">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -44,70 +44,70 @@
                                 <path
                                     d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                             </svg>
-                            {{ vehicle.alertsUpcoming }} in scadenza
+                            {{ vehicle.alertsUpcoming }} {{ $t('vehicles.upcoming') }}
                         </span>
                     </div>
                 </div>
                 <div class="info-tags">
                     <span v-if="vehicle.year" class="info-tag">📅 {{ vehicle.year }}</span>
                     <span v-if="vehicle.fuelName" class="info-tag">⛽ {{ vehicle.fuelName }}</span>
-                    <span v-if="!vehicle.isActive" class="info-tag inactive-tag">Inattivo</span>
+                    <span v-if="!vehicle.isActive" class="info-tag inactive-tag">{{ $t('common.inactive') }}</span>
                 </div>
             </div>
 
             <!-- Stats cards grid -->
             <div class="stats-grid">
                 <div class="stats-section glass-card">
-                    <h3 class="section-title">Chilometraggio</h3>
+                    <h3 class="section-title">{{ $t('vehicles.mileageSection') }}</h3>
                     <div class="stat-row">
-                        <span class="stat-label">Km attuali</span>
+                        <span class="stat-label">{{ $t('vehicles.currentMileage') }}</span>
                         <span class="stat-value">{{ vehicle.currentMileage ? formatNumber(vehicle.currentMileage) + ' km' : '—' }}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Km percorsi</span>
+                        <span class="stat-label">{{ $t('vehicles.kmDriven') }}</span>
                         <span class="stat-value">{{ vehicle.kmDriven > 0 ? formatNumber(vehicle.kmDriven) + ' km' : '—'
                             }}</span>
                     </div>
                 </div>
 
                 <div class="stats-section glass-card">
-                    <h3 class="section-title">Consumo</h3>
+                    <h3 class="section-title">{{ $t('vehicles.consumptionSection') }}</h3>
                     <div class="stat-row">
-                        <span class="stat-label">Consumo medio</span>
+                        <span class="stat-label">{{ $t('vehicles.avgConsumption') }}</span>
                         <span class="stat-value">{{ vehicle.avgConsumption != null ? vehicle.avgConsumption + ' km/L' :
                             '—' }}</span>
                     </div>
                 </div>
 
                 <div class="stats-section glass-card">
-                    <h3 class="section-title">Costi</h3>
+                    <h3 class="section-title">{{ $t('vehicles.costsSection') }}</h3>
                     <div class="stat-row">
-                        <span class="stat-label">Carburante</span>
+                        <span class="stat-label">{{ $t('vehicles.fuelCost') }}</span>
                         <span class="stat-value">€ {{ formatAmount(vehicle.totalFuelCost) }}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Manutenzioni</span>
+                        <span class="stat-label">{{ $t('vehicles.maintenanceCost') }}</span>
                         <span class="stat-value">€ {{ formatAmount(vehicle.totalMaintenanceCost) }}</span>
                     </div>
                     <div v-if="vehicle.purchasePrice > 0" class="stat-row">
-                        <span class="stat-label">Prezzo acquisto</span>
+                        <span class="stat-label">{{ $t('vehicles.purchasePrice') }}</span>
                         <span class="stat-value">€ {{ formatAmount(vehicle.purchasePrice) }}</span>
                     </div>
                     <div class="stat-row total-row">
-                        <span class="stat-label">Totale</span>
+                        <span class="stat-label">{{ $t('common.total') }}</span>
                         <span class="stat-value">€ {{ formatAmount(vehicle.totalCost) }}</span>
                     </div>
                 </div>
 
                 <div class="stats-section glass-card">
-                    <h3 class="section-title">Costo per km</h3>
+                    <h3 class="section-title">{{ $t('vehicles.costPerKmSection') }}</h3>
                     <div class="stat-row">
-                        <span class="stat-label">Gestione</span>
+                        <span class="stat-label">{{ $t('vehicles.runningCost') }}</span>
                         <span class="stat-value">{{ vehicle.runningCostPerKm != null ? '€ ' +
                             vehicle.runningCostPerKm.toFixed(3) : '—' }}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Totale (con acquisto)</span>
+                        <span class="stat-label">{{ $t('vehicles.totalWithPurchase') }}</span>
                         <span class="stat-value">{{ vehicle.costPerKm != null ? '€ ' + vehicle.costPerKm.toFixed(3) :
                             '—' }}</span>
                     </div>
@@ -116,7 +116,7 @@
 
             <!-- Maintenance alerts -->
             <div v-if="overdueAlerts.length > 0" class="alerts-section">
-                <h3 class="section-title-lg alerts-header overdue-header">⚠️ Manutenzioni scadute</h3>
+                <h3 class="section-title-lg alerts-header overdue-header">⚠️ {{ $t('vehicles.overdueMaintenances') }}</h3>
                 <div class="alerts-list">
                     <div v-for="a in overdueAlerts" :key="a.id" class="alert-item overdue"
                         @click="router.push('/alerts')">
@@ -133,7 +133,7 @@
                         <div class="alert-item-countdown overdue">
                             <template v-if="a.nextMaintenanceDate">
                                 <span class="countdown-val">{{ getDaysRemaining(a) }}</span>
-                                <span class="countdown-lbl">giorni</span>
+                                <span class="countdown-lbl">{{ $t('vehicles.days') }}</span>
                             </template>
                             <template v-else-if="a.nextMaintenanceOdometer && a.currentMileage">
                                 <span class="countdown-val">{{ formatNumber(a.nextMaintenanceOdometer -
@@ -146,7 +146,7 @@
             </div>
 
             <div v-if="upcomingAlerts.length > 0" class="alerts-section">
-                <h3 class="section-title-lg alerts-header upcoming-header">🔔 Manutenzioni in scadenza</h3>
+                <h3 class="section-title-lg alerts-header upcoming-header">🔔 {{ $t('vehicles.upcomingMaintenances') }}</h3>
                 <div class="alerts-list">
                     <div v-for="a in upcomingAlerts" :key="a.id" class="alert-item upcoming"
                         @click="router.push('/alerts')">
@@ -164,7 +164,7 @@
                         <div class="alert-item-countdown upcoming">
                             <template v-if="a.nextMaintenanceDate">
                                 <span class="countdown-val">{{ getDaysRemaining(a) }}</span>
-                                <span class="countdown-lbl">giorni</span>
+                                <span class="countdown-lbl">{{ $t('vehicles.days') }}</span>
                             </template>
                             <template v-else-if="a.nextMaintenanceOdometer && a.currentMileage">
                                 <span class="countdown-val">{{ formatNumber(a.nextMaintenanceOdometer -
@@ -178,7 +178,7 @@
 
             <!-- Consumption chart -->
             <div v-if="consumptionPoints.length >= 2" class="chart-section glass-card">
-                <h3 class="section-title">Andamento consumo medio</h3>
+                <h3 class="section-title">{{ $t('vehicles.consumptionTrend') }}</h3>
                 <div class="chart-wrapper">
                     <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="consumption-chart"
                         preserveAspectRatio="none">
@@ -251,8 +251,9 @@
         </div>
 
         <!-- FAB for new automotive transaction -->
-        <button v-if="vehicle" class="fab-btn" @click="createAutomotiveTransaction" title="Nuova spesa auto">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <button v-if="vehicle" class="fab-btn" @click="createAutomotiveTransaction" :title="$t('vehicles.newExpense')">
+        🚗
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                 <path d="M12 5v14M5 12h14" />
             </svg>
         </button>
@@ -267,7 +268,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 interface VehicleDetail {
     id: number
@@ -448,11 +449,11 @@ const detailError = ref('')
 const detailTransaction = ref<TransactionDetail | null>(null)
 
 function formatNumber(n: number): string {
-    return n.toLocaleString('it-IT')
+    return n.toLocaleString(locale.value)
 }
 
 function formatAmount(n: number): string {
-    return n.toLocaleString('it-IT', {
+    return n.toLocaleString(locale.value, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     })
@@ -486,7 +487,7 @@ function getDaysRemaining(a: VehicleAlert): number {
 }
 
 function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(dateStr).toLocaleDateString(locale.value, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const overdueAlerts = computed(() => vehicleAlerts.value.filter(a => getAlertStatus(a) === 'overdue'))
@@ -565,11 +566,11 @@ const chartXLabels = computed(() => {
     const labels: string[] = []
     for (let i = 0; i < pts.length; i += step) {
         const d = new Date(pts[i].date)
-        labels.push(d.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' }))
+        labels.push(d.toLocaleDateString(locale.value, { month: 'short', year: '2-digit' }))
     }
     // Always include last
     const last = new Date(pts[pts.length - 1].date)
-    const lastLabel = last.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' })
+    const lastLabel = last.toLocaleDateString(locale.value, { month: 'short', year: '2-digit' })
     if (labels[labels.length - 1] !== lastLabel) {
         labels.push(lastLabel)
     }
@@ -583,7 +584,7 @@ async function loadVehicle() {
         const data = await $fetch<{ vehicle: VehicleDetail }>(`/api/vehicles/${vehicleId.value}`)
         vehicle.value = data.vehicle
     } catch (error: any) {
-        loadError.value = error?.data?.message || 'Errore nel caricamento'
+        loadError.value = error?.data?.message || t('vehicles.loadError')
     } finally {
         loading.value = false
     }
@@ -644,7 +645,7 @@ async function openDetail(txId: number) {
         detailTransaction.value = result.transaction
     } catch (error: any) {
         console.error('Failed to fetch transaction details:', error)
-        detailError.value = error?.data?.message || 'Errore nel caricamento'
+        detailError.value = error?.data?.message || t('vehicles.loadError')
     } finally {
         loadingDetail.value = false
     }
@@ -684,7 +685,7 @@ async function deleteTransaction() {
     const tx = detailTransaction.value
     if (!tx) return
 
-    if (!confirm('Sei sicuro di voler eliminare questa transazione?')) return
+    if (!confirm(t('vehicles.deleteConfirm'))) return
 
     try {
         await $fetch(`/api/transactions/${tx.id}`, {
@@ -699,7 +700,7 @@ async function deleteTransaction() {
         loadAlerts()
     } catch (error) {
         console.error('Failed to delete transaction:', error)
-        alert('Errore durante l\'eliminazione della transazione')
+        alert(t('vehicles.deleteError'))
     }
 }
 
@@ -1202,7 +1203,7 @@ function createAutomotiveTransaction() {
     border-radius: 50%;
     border: none;
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary, #818cf8));
-    color: white;
+    color: var(--color-text-on-accent);
     display: flex;
     align-items: center;
     justify-content: center;

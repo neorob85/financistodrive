@@ -20,6 +20,10 @@
             <span class="stat-label">{{ $t('dashboard.monthlyExpenses') }}</span>
           </div>
           <div class="stat-value expense">€ {{ formatAmount(stats.currentMonth.expenses) }}</div>
+          <div v-if="stats.scheduled.expenses > 0" class="stat-projected expense">
+            € {{ formatAmount(stats.currentMonth.expenses + stats.scheduled.expenses) }}
+            <span class="projected-label">{{ $t('dashboard.withScheduled') }}</span>
+          </div>
         </div>
 
         <div class="stat-card glass-card">
@@ -33,6 +37,10 @@
             <span class="stat-label">{{ $t('dashboard.monthlyIncome') }}</span>
           </div>
           <div class="stat-value income">€ {{ formatAmount(stats.currentMonth.income) }}</div>
+          <div v-if="stats.scheduled.income > 0" class="stat-projected income">
+            € {{ formatAmount(stats.currentMonth.income + stats.scheduled.income) }}
+            <span class="projected-label">{{ $t('dashboard.withScheduled') }}</span>
+          </div>
         </div>
 
         <div class="stat-card glass-card">
@@ -98,7 +106,7 @@
 
       <!-- Vehicle cards -->
       <div v-if="vehicles.length > 0" class="vehicles-section">
-        <h2 class="section-title">Veicoli</h2>
+        <h2 class="section-title">{{ $t('nav.vehicles') }}</h2>
         <div class="vehicles-grid">
           <div v-for="v in vehicles" :key="v.id" class="vehicle-card glass-card">
             <div class="vehicle-header">
@@ -110,13 +118,13 @@
                 </div>
               </div>
               <div class="vehicle-alerts">
-                <span v-if="v.alertsOverdue > 0" class="alert-badge overdue" :title="v.alertsOverdue + ' manutenzioni scadute'" @click="router.push('/alerts')">
+                <span v-if="v.alertsOverdue > 0" class="alert-badge overdue" :title="$t('dashboard.overdueMaintenances', { count: v.alertsOverdue })" @click="router.push('/alerts')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                   </svg>
                   {{ v.alertsOverdue }}
                 </span>
-                <span v-if="v.alertsUpcoming > 0" class="alert-badge upcoming" :title="v.alertsUpcoming + ' manutenzioni in scadenza'" @click="router.push('/alerts')">
+                <span v-if="v.alertsUpcoming > 0" class="alert-badge upcoming" :title="$t('dashboard.upcomingMaintenances', { count: v.alertsUpcoming })" @click="router.push('/alerts')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                   </svg>
@@ -127,19 +135,19 @@
 
             <div class="vehicle-stats">
               <div class="vehicle-stat-row">
-                <span class="stat-key">Km attuali</span>
+                <span class="stat-key">{{ $t('vehicles.currentMileage') }}</span>
                 <span class="stat-val">{{ v.currentMileage ? formatNumber(v.currentMileage) + ' km' : '—' }}</span>
               </div>
               <div class="vehicle-stat-row">
-                <span class="stat-key">Consumo medio</span>
+                <span class="stat-key">{{ $t('automotive.averageConsumption') }}</span>
                 <span class="stat-val">{{ v.avgConsumption != null ? v.avgConsumption + ' km/L' : '—' }}</span>
               </div>
               <div class="vehicle-stat-row">
-                <span class="stat-key">Costo/km (gestione)</span>
+                <span class="stat-key">{{ $t('dashboard.runningCostPerKm') }}</span>
                 <span class="stat-val">{{ v.runningCostPerKm != null ? '€ ' + v.runningCostPerKm.toFixed(3) : '—' }}</span>
               </div>
               <div class="vehicle-stat-row">
-                <span class="stat-key">Costo/km (totale)</span>
+                <span class="stat-key">{{ $t('dashboard.totalCostPerKm') }}</span>
                 <span class="stat-val">{{ v.costPerKm != null ? '€ ' + v.costPerKm.toFixed(3) : '—' }}</span>
               </div>
             </div>
@@ -156,6 +164,7 @@ definePageMeta({
 })
 
 const router = useRouter()
+const { locale } = useI18n()
 
 interface MonthData {
   month: string
@@ -165,6 +174,7 @@ interface MonthData {
 
 interface DashboardStats {
   currentMonth: { expenses: number; income: number }
+  scheduled: { expenses: number; income: number }
   averages: { expenses: number; income: number }
   months: MonthData[]
 }
@@ -188,6 +198,7 @@ interface VehicleStats {
 const loading = ref(true)
 const stats = ref<DashboardStats>({
   currentMonth: { expenses: 0, income: 0 },
+  scheduled: { expenses: 0, income: 0 },
   averages: { expenses: 0, income: 0 },
   months: []
 })
@@ -207,20 +218,20 @@ function getBarHeight(value: number): number {
 }
 
 function formatAmount(amount: number): string {
-  return amount.toLocaleString('it-IT', {
+  return amount.toLocaleString(locale.value, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
 }
 
 function formatNumber(num: number): string {
-  return num.toLocaleString('it-IT')
+  return num.toLocaleString(locale.value)
 }
 
 function formatMonthLabel(monthStr: string): string {
   const [year, month] = monthStr.split('-')
   const date = new Date(Number(year), Number(month) - 1)
-  return date.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')
+  return date.toLocaleDateString(locale.value, { month: 'short' }).replace('.', '')
 }
 
 onMounted(async () => {
@@ -330,6 +341,28 @@ onMounted(async () => {
   color: var(--color-success);
 }
 
+.stat-projected {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: var(--space-xs);
+  opacity: 0.7;
+}
+
+.stat-projected.expense {
+  color: var(--color-error);
+}
+
+.stat-projected.income {
+  color: var(--color-success);
+}
+
+.projected-label {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-left: 4px;
+}
+
 .stat-averages {
   display: flex;
   flex-direction: column;
@@ -426,11 +459,11 @@ onMounted(async () => {
 }
 
 .bar-expense {
-  background: linear-gradient(180deg, #ef4444, #dc2626);
+  background: linear-gradient(180deg, var(--color-error-light), var(--color-error));
 }
 
 .bar-income {
-  background: linear-gradient(180deg, #10b981, #059669);
+  background: linear-gradient(180deg, var(--color-success), var(--color-success-light));
 }
 
 .bar-tooltip {
@@ -481,11 +514,11 @@ onMounted(async () => {
 }
 
 .expense-dot {
-  background: #ef4444;
+  background: var(--color-error);
 }
 
 .income-dot {
-  background: #10b981;
+  background: var(--color-success);
 }
 
 /* Vehicles section */

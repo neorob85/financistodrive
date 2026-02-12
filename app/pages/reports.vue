@@ -113,7 +113,7 @@ definePageMeta({
     layout: 'default'
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 interface CategoryReport {
     categoryId: number
@@ -186,7 +186,7 @@ function formatDate(d: Date): string {
 }
 
 function formatAmount(n: number): string {
-    return n.toLocaleString('it-IT', {
+    return n.toLocaleString(locale.value, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     })
@@ -198,7 +198,7 @@ const periodDescription = computed(() => {
     const toDate = new Date(to)
     toDate.setDate(toDate.getDate() - 1) // show inclusive end
     const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
-    return `${fromDate.toLocaleDateString('it-IT', opts)} — ${toDate.toLocaleDateString('it-IT', opts)}`
+    return `${fromDate.toLocaleDateString(locale.value, opts)} — ${toDate.toLocaleDateString(locale.value, opts)}`
 })
 
 const sortedByExpenses = computed(() => {
@@ -289,7 +289,7 @@ onMounted(() => {
 .period-btn.active {
     background: var(--color-accent);
     border-color: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 /* Custom date range */

@@ -26,7 +26,9 @@
     "total": "Total",
     "none": "None",
     "close": "Close",
-    "activeOnly": "Active only"
+    "activeOnly": "Active only",
+    "goBack": "Go back",
+    "additionalNotes": "Additional notes..."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -64,7 +66,12 @@
     "monthlyAverage": "Monthly Average",
     "expenses": "Expenses",
     "income": "Income",
-    "monthlyTrend": "Monthly Trend"
+    "monthlyTrend": "Monthly Trend",
+    "withScheduled": "with scheduled",
+    "runningCostPerKm": "Cost/km (running)",
+    "totalCostPerKm": "Cost/km (total)",
+    "overdueMaintenances": "{count} overdue maintenance",
+    "upcomingMaintenances": "{count} upcoming maintenance"
   },
   "accounts": {
     "title": "Your Accounts",
@@ -90,7 +97,8 @@
     "linkedTo": "Linked to:",
     "billingPeriod": "Billing period: from {start} to {end}",
     "previousBalance": "Previous period balance:",
-    "payment": "Payment:"
+    "payment": "Payment:",
+    "recalculateBalances": "Recalculate balances"
   },
   "transactions": {
     "title": "Transactions",
@@ -137,6 +145,16 @@
     "file": "File",
     "photo": "Photo",
     "close": "Close",
+    "editFuel": "Edit Refueling",
+    "editMaintenance": "Edit Maintenance",
+    "editSchedule": "Edit Schedule",
+    "loadTransactionError": "Error loading transaction",
+    "fileUploadError": "Error uploading file",
+    "fileDeleteError": "Error deleting attachment",
+    "photoUploadError": "Error uploading photo",
+    "fillFuelFields": "Fill at least 2 fields among Liters, Price/Liter and Total",
+    "notFuelTransaction": "This is not a fuel transaction",
+    "notMaintenanceTransaction": "This is not a maintenance transaction",
     "periods": {
       "future": "Future",
       "today": "Today",
@@ -158,7 +176,28 @@
     "averageConsumption": "Average consumption",
     "fuelEfficiency": "Fuel efficiency",
     "fullTank": "Full tank",
-    "genericMaintenance": "Generic maintenance"
+    "genericMaintenance": "Generic maintenance",
+    "refueling": "Refueling",
+    "maintenanceLabel": "Maintenance",
+    "selectVehicle": "-- Select vehicle --",
+    "previousRefuelingMissing": "Previous refueling missing",
+    "maintenanceTypesLabel": "Maintenance Types",
+    "descriptionRequired": "Description",
+    "exampleDescription": "e.g. General maintenance",
+    "fuelType": "Fuel type",
+    "pricePerLiterFull": "Price/Liter (€)",
+    "addType": "+ Add type",
+    "noTypesHintEdit": "No type specified. A generic maintenance will be saved.",
+    "noTypesHintNew": "No type specified. A generic maintenance will be created.",
+    "selectType": "-- Type --",
+    "descriptionOptional": "Description (optional)",
+    "amountsBalanced": "Amounts balanced",
+    "difference": "Difference",
+    "typesTotal": "Types total",
+    "enterMaintenanceAmount": "Enter maintenance amount",
+    "enterDescription": "Enter a maintenance description",
+    "typesAmountMustMatch": "The sum of type amounts must equal the total amount",
+    "exampleAnnualService": "e.g. Annual service"
   },
   "categories": {
     "title": "Categories",
@@ -232,7 +271,31 @@
     "transactions": "Transactions",
     "noTransactions": "No transactions",
     "scrollToLoad": "Scroll to load more",
-    "thisYear": "This year"
+    "thisYear": "This year",
+    "alerts": "Alerts",
+    "maintenanceTypes": "Maintenance Types",
+    "detail": "Vehicle Detail",
+    "goBack": "Go Back",
+    "overdue": "overdue",
+    "upcoming": "upcoming",
+    "mileageSection": "Mileage",
+    "kmDriven": "Km Driven",
+    "consumptionSection": "Consumption",
+    "avgConsumption": "Average Consumption",
+    "costsSection": "Costs",
+    "fuelCost": "Fuel",
+    "maintenanceCost": "Maintenance",
+    "costPerKmSection": "Cost per km",
+    "runningCost": "Running",
+    "totalWithPurchase": "Total (with purchase)",
+    "overdueMaintenances": "Overdue Maintenance",
+    "upcomingMaintenances": "Upcoming Maintenance",
+    "days": "days",
+    "consumptionTrend": "Average Consumption Trend",
+    "newExpense": "New vehicle expense",
+    "loadError": "Error loading",
+    "deleteConfirm": "Are you sure you want to delete this transaction?",
+    "deleteError": "Error deleting transaction"
   },
   "maintenance": {
     "title": "Maintenance",
@@ -463,6 +526,22 @@
   "user": {
     "defaultName": "User"
   },
+  "setup": {
+    "subtitle": "Configure the database connection to get started",
+    "host": "Host",
+    "port": "Port",
+    "username": "Username",
+    "password": "Password",
+    "hostPlaceholder": "e.g. localhost or 192.168.1.100",
+    "testConnection": "Test Connection",
+    "initializeDatabase": "Initialize Database",
+    "note": "Note:",
+    "noteText": "The database will be created with all necessary tables. The user must have permissions to create databases.",
+    "connectionSuccess": "Connection successful!",
+    "connectionError": "Error during connection test",
+    "initSuccess": "Database initialized successfully!",
+    "initError": "Error during database initialization"
+  },
   "reports": {
     "title": "Reports",
     "thisMonth": "This month",
@@ -480,5 +559,8 @@
     "categoryDetails": "Category details",
     "category": "Category",
     "total": "Total"
+  },
+  "PeriodSeparator": {
+    "transactions": "transactions"
   }
 }

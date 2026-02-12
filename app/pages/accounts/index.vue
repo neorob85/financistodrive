@@ -129,7 +129,7 @@
       <button class="btn btn-outline" @click="recalculateBalances" :disabled="recalculating">
         <span v-if="recalculating" class="spinner-sm"></span>
         <span v-else>🔄</span>
-        Ricalcola saldi
+        {{ $t('accounts.recalculateBalances') }}
       </button>
     </div>
 
@@ -264,7 +264,7 @@ definePageMeta({
 })
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 interface Account {
   id: number
@@ -478,7 +478,7 @@ async function saveAccount() {
 }
 
 function formatAmount(amount: number): string {
-  return Math.abs(amount).toLocaleString('it-IT', {
+  return Math.abs(amount).toLocaleString(locale.value, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
@@ -515,7 +515,7 @@ function getUsageClass(account: Account): string {
 function formatShortDate(isoStr: string): string {
   const d = new Date(isoStr)
   const day = d.getDate()
-  const month = d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()
+  const month = d.toLocaleString(locale.value, { month: 'short' }).toUpperCase()
   return `${day}-${month}`
 }
 
@@ -754,15 +754,15 @@ async function recalculateBalances() {
 }
 
 .usage-fill.safe {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
 }
 
 .usage-fill.warning {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-warning-light));
 }
 
 .usage-fill.danger {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+  background: linear-gradient(90deg, var(--color-error), var(--color-error-light));
 }
 
 .usage-text {
@@ -898,7 +898,7 @@ async function recalculateBalances() {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
   border: none;
-  color: white;
+  color: var(--color-text-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1031,7 +1031,7 @@ async function recalculateBalances() {
 .btn-primary {
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
   border: none;
-  color: white;
+  color: var(--color-text-on-accent);
 }
 
 .btn-primary:hover:not(:disabled) {

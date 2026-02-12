@@ -730,7 +730,7 @@ onMounted(() => {
 
 .split-type-btn.active {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .split-amount {
@@ -865,7 +865,7 @@ onMounted(() => {
 .btn-primary {
     background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
     border: none;
-    color: white;
+    color: var(--color-text-on-accent);
 }
 
 .btn-primary:disabled {

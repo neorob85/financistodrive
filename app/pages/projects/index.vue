@@ -118,7 +118,7 @@ definePageMeta({
   layout: 'default'
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
 interface Project {
@@ -234,7 +234,7 @@ async function saveProject() {
 }
 
 function formatAmount(amount: number): string {
-  return amount.toLocaleString('it-IT', {
+  return amount.toLocaleString(locale.value, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
@@ -436,15 +436,15 @@ function getProgressClass(project: Project): string {
 }
 
 .progress-fill.safe {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
 }
 
 .progress-fill.warning {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-warning-light));
 }
 
 .progress-fill.over {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+  background: linear-gradient(90deg, var(--color-error), var(--color-error-light));
 }
 
 .progress-info {
@@ -491,7 +491,7 @@ function getProgressClass(project: Project): string {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
   border: none;
-  color: white;
+  color: var(--color-text-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -611,7 +611,7 @@ function getProgressClass(project: Project): string {
 .btn-primary {
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
   border: none;
-  color: white;
+  color: var(--color-text-on-accent);
 }
 
 .btn-primary:hover:not(:disabled) {
