@@ -145,7 +145,7 @@ export default defineEventHandler(async (event) => {
                             `UPDATE transactions SET
                                 title = ?, amount_from = ?, amount_to = ?, from_account_id = ?,
                                 to_account_id = ?, category_id = ?, is_transfer = ?,
-                                transaction_date = ?, currency_id = ?
+                                transaction_date = ?, currency_id = ?, notes = ?
                              WHERE id = ? AND user_id = ?`,
                             [
                                 split.title || title,
@@ -157,6 +157,7 @@ export default defineEventHandler(async (event) => {
                                 split.isTransfer ? 1 : 0,
                                 transactionDate,
                                 currencyId,
+                                split.notes || null,
                                 split.id,
                                 result.userId
                             ]
@@ -167,8 +168,8 @@ export default defineEventHandler(async (event) => {
                         await conn.query(
                             `INSERT INTO transactions
                              (user_id, parent_id, title, amount_from, amount_to, from_account_id, to_account_id,
-                              category_id, is_transfer, transaction_date, currency_id)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                              category_id, is_transfer, transaction_date, currency_id, notes)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                             [
                                 result.userId,
                                 transactionId,
@@ -180,7 +181,8 @@ export default defineEventHandler(async (event) => {
                                 split.categoryId,
                                 split.isTransfer ? 1 : 0,
                                 transactionDate,
-                                currencyId
+                                currencyId,
+                                split.notes || null
                             ]
                         )
                     }

@@ -24,8 +24,8 @@
             <!-- Total Amount -->
             <div class="amount-section">
                 <span class="amount-sign expense">−</span>
-                <input v-model.number="form.maintenanceAmount" type="number" step="0.01" min="0" placeholder="0.00"
-                    class="amount-input">
+                <input v-model.number="form.maintenanceAmount" type="number" inputmode="decimal" step="0.01" min="0"
+                    placeholder="0.00" class="amount-input">
                 <span class="currency-symbol">€</span>
             </div>
 
@@ -50,8 +50,8 @@
             <!-- Odometer -->
             <div class="input-group">
                 <label for="odometer">{{ $t('automotive.mileage') }} *</label>
-                <input id="odometer" v-model.number="form.odometer" type="number" min="0" class="input-field"
-                    placeholder="es. 45000" required>
+                <input id="odometer" v-model.number="form.odometer" type="number" inputmode="numeric" min="0"
+                    class="input-field" placeholder="es. 45000" required>
             </div>
 
             <!-- Category -->
@@ -86,7 +86,7 @@
                             <option v-for="mt in filteredMaintenanceTypes" :key="mt.id" :value="mt.id">{{ mt.title }}
                             </option>
                         </select>
-                        <input v-model.number="item.amount" type="number" step="0.01" min="0"
+                        <input v-model.number="item.amount" type="number" inputmode="decimal" step="0.01" min="0"
                             class="input-field item-amount" placeholder="€">
                         <button type="button" class="remove-item-btn" @click="removeMaintenanceItem(index)">×</button>
                     </div>
@@ -414,7 +414,7 @@ async function handleSubmit() {
         return
     }
 
-    if (!form.value.maintenanceAmount) {
+    if (form.value.maintenanceAmount == null) {
         formError.value = t('automotive.enterMaintenanceAmount')
         return
     }

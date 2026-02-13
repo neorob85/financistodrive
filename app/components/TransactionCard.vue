@@ -20,7 +20,10 @@
       </div>
     </div>
 
-    <!-- Amount -->
+    <!-- Attachment icon + Amount -->
+    <svg v-if="transaction.hasAttachment" class="tx-attachment-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
     <div class="tx-amount" :class="transactionType">
       {{ formattedAmount }}
     </div>
@@ -41,6 +44,7 @@ interface Transaction {
   odometer?: number | null
   logType?: string | null
   averageConsumption?: number | null
+  hasAttachment?: boolean
 }
 
 const { locale } = useI18n()
@@ -214,6 +218,12 @@ const txTime = computed(() => {
   background: var(--color-accent-bg, rgba(99, 102, 241, 0.12));
   color: var(--color-accent, #6366f1);
   font-weight: 600;
+}
+
+.tx-attachment-icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  opacity: 0.6;
 }
 
 .tx-amount {

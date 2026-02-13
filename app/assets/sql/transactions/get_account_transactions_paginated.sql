@@ -18,6 +18,8 @@ SELECT
       COALESCE((SELECT SUM(ch.amount_from) FROM transactions ch WHERE ch.parent_id = t.id AND ch.is_transfer = 0), 0)
     ELSE t.amount_from
   END AS balanceAmount,
+  -- Attachment flag
+  (SELECT COUNT(*) > 0 FROM transaction_attachments ta WHERE ta.transaction_id = t.id) AS hasAttachment,
   -- Automotive info
   COALESCE(fl.odometer, ml.odometer) as odometer,
   COALESCE(v_fuel.brand, v_maint.brand) as vehicleBrand,

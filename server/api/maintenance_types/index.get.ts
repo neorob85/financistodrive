@@ -14,13 +14,20 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        const sql = await loadSql('maintenance_types/get_all_maintenance_types.sql')
+        const [sqlTypes, sqlStatus] = await Promise.all([
+            loadSql('maintenance_types/get_all_maintenance_types.sql'),
+            loadSql('maintenance_types/get_maintenance_status.sql')
+        ])
 
-        const rows = await withConnection(async (conn) => {
-            return await conn.query(sql, [result.userId])
+        const { typesRows, statusRows } = await withConnection(async (conn) => {
+            const [typesRows, statusRows] = await Promise.all([
+                conn.query(sqlTypes, [result.userId]),
+                conn.query(sqlStatus, [result.userId, result.userId, result.userId])
+            ])
+            return { typesRows, statusRows }
         })
 
-        const maintenanceTypes = (rows as any[]).map((row: any) => ({
+        const maintenanceTypes = (typesRows as any[]).map((row: any) => ({
             id: row.id,
             title: row.title,
             vehicleId: row.vehicle_id,
@@ -33,7 +40,17 @@ export default defineEventHandler(async (event) => {
             defaultKmBeforeAlert: row.default_km_before_alert
         }))
 
-        return { maintenanceTypes }
+        const maintenanceStatus = (statusRows as any[]).map((row: any) => ({
+            maintenanceTypeId: row.maintenance_type_id,
+            vehicleId: row.vehicle_id,
+            vehicleName: [row.vehicle_brand, row.vehicle_model].filter(Boolean).join(' '),
+            lastDate: row.last_date,
+            lastOdometer: row.last_odometer,
+            nextDate: row.next_maintenance_date,
+            nextOdometer: row.next_maintenance_odometer
+        }))
+
+        return { maintenanceTypes, maintenanceStatus }
     } catch (error: any) {
         throw createError({ statusCode: 500, message: error.message })
     }

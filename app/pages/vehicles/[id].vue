@@ -253,9 +253,9 @@
         <!-- FAB for new automotive transaction -->
         <button v-if="vehicle" class="fab-btn" @click="createAutomotiveTransaction" :title="$t('vehicles.newExpense')">
         🚗
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <!--<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                 <path d="M12 5v14M5 12h14" />
-            </svg>
+            </svg>-->
         </button>
     </div>
 
@@ -1211,6 +1211,7 @@ function createAutomotiveTransaction() {
     box-shadow: 0 4px 16px var(--color-accent-glow);
     transition: transform 0.2s, box-shadow 0.2s;
     z-index: 50;
+    font-size: 1.5rem;
 }
 
 .fab-btn:hover {

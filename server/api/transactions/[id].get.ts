@@ -120,7 +120,8 @@ export default defineEventHandler(async (event) => {
             categoryTitle: c.category_title,
             toAccountId: c.to_account_id,
             toAccountTitle: c.to_account_title,
-            isTransfer: !!c.is_transfer
+            isTransfer: !!c.is_transfer,
+            notes: c.notes || null
         }))
 
         const attachments = (data.attachmentRows as any[]).map((a: any) => ({

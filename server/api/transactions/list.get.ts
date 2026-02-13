@@ -75,7 +75,8 @@ export default defineEventHandler(async (event) => {
                 balanceAmount: Number(tx.balanceAmount),
                 isAutomotive: !!tx.isAutomotive,
                 odometer: tx.odometer ? Number(tx.odometer) : null,
-                vehicleName: (tx.vehicleBrand || tx.vehicleModel) ? `${tx.vehicleBrand || ''} ${tx.vehicleModel || ''}`.trim() : null
+                vehicleName: (tx.vehicleBrand || tx.vehicleModel) ? `${tx.vehicleBrand || ''} ${tx.vehicleModel || ''}`.trim() : null,
+                hasAttachment: !!tx.hasAttachment
             })),
             pagination: {
                 page,

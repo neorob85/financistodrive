@@ -75,9 +75,9 @@ export default defineEventHandler(async (event) => {
             if (splits && Array.isArray(splits) && splits.length > 0) {
                 for (const split of splits) {
                     await conn.query(
-                        `INSERT INTO transactions 
-           (title, amount_from, amount_to, from_account_id, to_account_id, category_id, parent_id, currency_id, transaction_date, is_transfer, user_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        `INSERT INTO transactions
+           (title, amount_from, amount_to, from_account_id, to_account_id, category_id, parent_id, currency_id, transaction_date, notes, is_transfer, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                         [
                             split.title || title,
                             split.amountFrom,
@@ -88,6 +88,7 @@ export default defineEventHandler(async (event) => {
                             txId,
                             currencyId || 1,
                             transactionDate,
+                            split.notes || null,
                             split.isTransfer ? 1 : 0,
                             result.userId
                         ]

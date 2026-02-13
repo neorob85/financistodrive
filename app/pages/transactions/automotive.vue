@@ -30,10 +30,10 @@
             <!-- Amount Section (top of form for both tabs) -->
             <div class="amount-section">
                 <span class="amount-sign expense">−</span>
-                <input v-if="activeTab === 'fuel'" v-model.number="form.fuelTotal" type="number" step="0.01" min="0"
-                    placeholder="0.00" class="amount-input" @input="onFuelFieldEdit('total')">
-                <input v-else v-model.number="form.maintenanceAmount" type="number" step="0.01" min="0"
-                    placeholder="0.00" class="amount-input">
+                <input v-if="activeTab === 'fuel'" v-model.number="form.fuelTotal" type="number" inputmode="decimal"
+                    step="0.01" min="0" placeholder="0.00" class="amount-input" @input="onFuelFieldEdit('total')">
+                <input v-else v-model.number="form.maintenanceAmount" type="number" inputmode="decimal" step="0.01"
+                    min="0" placeholder="0.00" class="amount-input">
                 <span class="currency-symbol">€</span>
             </div>
 
@@ -57,8 +57,8 @@
             <!-- Odometer -->
             <div class="input-group">
                 <label for="odometer">{{ $t('automotive.mileage') }} *</label>
-                <input id="odometer" v-model.number="form.odometer" type="number" min="0" class="input-field"
-                    placeholder="es. 45000" required>
+                <input id="odometer" v-model.number="form.odometer" type="number" inputmode="numeric" min="0"
+                    class="input-field" placeholder="es. 45000" required>
             </div>
 
             <!-- FUEL TAB FIELDS -->
@@ -75,15 +75,17 @@
                 <!-- Fuel Volume -->
                 <div class="input-group">
                     <label for="fuelVolume">{{ $t('automotive.liters') }}</label>
-                    <input id="fuelVolume" v-model.number="form.fuelVolume" type="number" step="0.01" min="0"
-                        class="input-field" placeholder="es. 45.50" @input="onFuelFieldEdit('volume')">
+                    <input id="fuelVolume" v-model.number="form.fuelVolume" type="number" inputmode="decimal"
+                        step="0.01" min="0" class="input-field" placeholder="es. 45.50"
+                        @input="onFuelFieldEdit('volume')">
                 </div>
 
                 <!-- Price per Liter -->
                 <div class="input-group">
                     <label for="pricePerLiter">{{ $t('automotive.pricePerLiterFull') }}</label>
-                    <input id="pricePerLiter" v-model.number="form.pricePerLiter" type="number" step="0.001" min="0"
-                        class="input-field" placeholder="es. 1.789" @input="onFuelFieldEdit('price')">
+                    <input id="pricePerLiter" v-model.number="form.pricePerLiter" type="number" inputmode="decimal"
+                        step="0.001" min="0" class="input-field" placeholder="es. 1.789"
+                        @input="onFuelFieldEdit('price')">
                 </div>
 
                 <!-- Full Tank -->
@@ -136,7 +138,7 @@
                                 <option :value="null">{{ $t('automotive.selectType') }}</option>
                                 <option v-for="m in filteredMaintenanceTypes" :key="m.id" :value="m.id">{{ m.title }}</option>
                             </select>
-                            <input v-model.number="item.amount" type="number" step="0.01" min="0"
+                            <input v-model.number="item.amount" type="number" inputmode="decimal" step="0.01" min="0"
                                 class="input-field item-amount" placeholder="€">
                             <button type="button" class="remove-item-btn"
                                 @click="removeMaintenanceItem(index)">×</button>
@@ -173,8 +175,8 @@
                 </select>
             </div>
 
-            <!-- Category -->
-            <div class="input-group">
+            <!-- Category (for fuel tab only, maintenance has its own) -->
+            <div v-if="activeTab === 'fuel'" class="input-group">
                 <label for="category">{{ $t('transactions.category') }}</label>
                 <select id="category" v-model="form.categoryId" class="input-field">
                     <option :value="null">{{ $t('transactions.noCategory') }}</option>
@@ -461,7 +463,7 @@ async function handleSubmit() {
             return
         }
     } else {
-        if (!form.value.maintenanceAmount) {
+        if (form.value.maintenanceAmount == null) {
             formError.value = t('automotive.enterMaintenanceAmount')
             return
         }
@@ -866,15 +868,14 @@ onMounted(() => {
 }
 
 .attachment-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-sm) var(--space-md);
+    flex: 1;
+    padding: var(--space-md);
     background: var(--color-bg-elevated);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
     cursor: pointer;
+    text-align: center;
+    color: var(--color-text-primary);
     font-size: 0.9rem;
 }
 

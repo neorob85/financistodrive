@@ -200,6 +200,7 @@
                                 <span v-if="child.isTransfer && child.toAccountTitle" class="split-destination">
                                     → {{ child.toAccountTitle }}
                                 </span>
+                                <span v-if="child.notes" class="split-notes">{{ child.notes }}</span>
                             </div>
                             <span class="split-amount" :class="child.amountFrom < 0 ? 'expense' : 'income'">
                                 {{ formatAmount(child.amountFrom, transaction.currencySymbol) }}
@@ -646,6 +647,12 @@ function getFileName(path: string) {
 .split-destination {
     font-size: 0.75rem;
     color: var(--color-text-muted);
+}
+
+.split-notes {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-style: italic;
 }
 
 .split-amount.income {

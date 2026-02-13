@@ -15,8 +15,8 @@
 
     <!-- Transactions list -->
     <div v-else class="transactions-list" ref="listRef">
-      <template v-for="(group, period) in groupedTransactions" :key="period">
-        <PeriodSeparator :label="period" :count="group.transactions.length" :balance="group.balance" />
+      <template v-for="(group, periodKey) in groupedTransactions" :key="periodKey">
+        <PeriodSeparator :label="group.label" :count="group.transactions.length" :balance="group.balance" />
         <TransactionCard v-for="tx in group.transactions" :key="tx.id" :transaction="tx" @click="openDetail(tx.id)" />
       </template>
 
@@ -146,6 +146,7 @@ interface TransactionDetail {
 interface TransactionGroup {
   transactions: Transaction[]
   balance: number
+  label: string
 }
 
 const transactions = ref<Transaction[]>([])
@@ -154,6 +155,7 @@ const loadingMore = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
 const limit = 20
+const periodBalances = ref<Record<string, number>>({})
 
 const listRef = ref<HTMLElement | null>(null)
 const loadMoreRef = ref<HTMLElement | null>(null)
@@ -163,6 +165,25 @@ const showDetail = ref(false)
 const loadingDetail = ref(false)
 const detailError = ref('')
 const detailTransaction = ref<TransactionDetail | null>(null)
+
+// Period label mapping
+const periodLabels: Record<string, () => string> = {
+  future: () => t('transactions.periods.future'),
+  today: () => t('transactions.periods.today'),
+  yesterday: () => t('transactions.periods.yesterday'),
+  thisMonth: () => t('transactions.periods.thisMonth'),
+  lastMonth: () => t('transactions.periods.lastMonth'),
+  previous: () => t('transactions.periods.previous'),
+}
+
+function getPeriodKey(txDate: Date, now: Date, today: Date, yesterday: Date, thisMonthStart: Date, lastMonthStart: Date): string {
+  if (txDate > now) return 'future'
+  if (txDate >= today) return 'today'
+  if (txDate >= yesterday) return 'yesterday'
+  if (txDate >= thisMonthStart) return 'thisMonth'
+  if (txDate >= lastMonthStart) return 'lastMonth'
+  return 'previous'
+}
 
 // Group transactions by period
 const groupedTransactions = computed(() => {
@@ -176,28 +197,16 @@ const groupedTransactions = computed(() => {
 
   for (const tx of transactions.value) {
     const txDate = new Date(tx.transactionDate)
-    let period: string
+    const periodKey = getPeriodKey(txDate, now, today, yesterday, thisMonthStart, lastMonthStart)
 
-    if (txDate > now) {
-      period = t('transactions.periods.future')
-    } else if (txDate >= today) {
-      period = t('transactions.periods.today')
-    } else if (txDate >= yesterday) {
-      period = t('transactions.periods.yesterday')
-    } else if (txDate >= thisMonthStart) {
-      period = t('transactions.periods.thisMonth')
-    } else if (txDate >= lastMonthStart) {
-      period = t('transactions.periods.lastMonth')
-    } else {
-      period = t('transactions.periods.previous')
+    if (!groups[periodKey]) {
+      groups[periodKey] = {
+        transactions: [],
+        balance: periodBalances.value[periodKey] ?? 0,
+        label: periodLabels[periodKey]?.() ?? periodKey,
+      }
     }
-
-    if (!groups[period]) {
-      groups[period] = { transactions: [], balance: 0 }
-    }
-    const group = groups[period]!
-    group.transactions.push(tx)
-    group.balance += tx.balanceAmount
+    groups[periodKey]!.transactions.push(tx)
   }
 
   return groups
@@ -222,6 +231,16 @@ function formatFullDate(dateStr: string) {
 
 function getFileName(path: string) {
   return path.split('/').pop() || path
+}
+
+// Fetch period balances (server-calculated totals for all transactions, not just loaded ones)
+async function fetchPeriodBalances() {
+  try {
+    const result = await $fetch<{ periodBalances: Record<string, number> }>('/api/transactions/period-balances')
+    periodBalances.value = result.periodBalances
+  } catch (error) {
+    console.error('Failed to fetch period balances:', error)
+  }
 }
 
 // Fetch transactions
@@ -316,9 +335,9 @@ async function deleteTransaction() {
       method: 'DELETE'
     })
     closeDetail()
-    // Refresh list
+    // Refresh list and balances
     page.value = 1
-    await fetchTransactions(1)
+    await Promise.all([fetchTransactions(1), fetchPeriodBalances()])
   } catch (error) {
     console.error('Failed to delete transaction:', error)
     alert(t('transactions.deleteError'))
@@ -327,6 +346,7 @@ async function deleteTransaction() {
 
 // Initial load
 onMounted(() => {
+  fetchPeriodBalances()
   fetchTransactions(1)
   setupInfiniteScroll()
 })

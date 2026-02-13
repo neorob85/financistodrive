@@ -37,8 +37,8 @@
                 <span class="amount-sign" :class="transactionType">
                     {{ transactionType === 'expense' ? '−' : transactionType === 'income' ? '+' : '⇄' }}
                 </span>
-                <input v-model.number="form.amount" type="number" step="0.01" min="0" placeholder="0.00"
-                    class="amount-input" required>
+                <input v-model.number="form.amount" type="number" inputmode="decimal" step="0.01" min="0"
+                    placeholder="0.00" class="amount-input" required>
                 <span class="currency-symbol">€</span>
             </div>
 
@@ -100,36 +100,42 @@
                     <span>{{ $t('transactions.subdivision') }}</span>
                     <span :class="{ 'amount-ok': splitBalanced, 'amount-error': !splitBalanced }">
                         {{ formatCurrency(totalSplitAmount) }} / {{ formatCurrency(form.amount) }}
-                        {{ splitBalanced ? '✓' : '' }}
+                        <template v-if="splitBalanced">✓</template>
+                        <template v-else>({{ splitRemaining >= 0 ? '+' : '-' }}{{ formatCurrency(Math.abs(splitRemaining)) }})</template>
                     </span>
                 </div>
 
                 <div v-for="(split, index) in splits" :key="index" class="split-item">
-                    <div class="split-type-toggle">
-                        <button type="button" class="split-type-btn" :class="{ active: split.type === 'category' }"
-                            @click="split.type = 'category'">Cat</button>
-                        <button type="button" class="split-type-btn" :class="{ active: split.type === 'transfer' }"
-                            @click="split.type = 'transfer'">Trasf</button>
+                    <div class="split-row">
+                        <div class="split-type-toggle">
+                            <button type="button" class="split-type-btn"
+                                :class="{ active: split.type === 'category' }"
+                                @click="split.type = 'category'">Cat</button>
+                            <button type="button" class="split-type-btn"
+                                :class="{ active: split.type === 'transfer' }"
+                                @click="split.type = 'transfer'">Trasf</button>
+                        </div>
+
+                        <input v-model.number="split.amount" type="number" inputmode="decimal" step="0.01" min="0"
+                            placeholder="€" class="split-amount">
+
+                        <select v-if="split.type === 'category'" v-model="split.categoryId" class="split-select">
+                            <option :value="null">{{ $t('transactions.category') }}</option>
+                            <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
+                                {{ cat.indent }}{{ cat.title }}
+                            </option>
+                        </select>
+                        <select v-else v-model="split.toAccountId" class="split-select">
+                            <option :value="null">{{ $t('transactions.account') }}</option>
+                            <option v-for="acc in accounts.filter(a => a.id !== form.fromAccountId)" :key="acc.id"
+                                :value="acc.id">
+                                {{ acc.title }}
+                            </option>
+                        </select>
+
+                        <button type="button" class="remove-split-btn" @click="removeSplit(index)">×</button>
                     </div>
-
-                    <input v-model.number="split.amount" type="number" step="0.01" min="0" placeholder="€"
-                        class="split-amount">
-
-                    <select v-if="split.type === 'category'" v-model="split.categoryId" class="split-select">
-                        <option :value="null">{{ $t('transactions.category') }}</option>
-                        <option v-for="cat in flatCategories" :key="cat.id" :value="cat.id">
-                            {{ cat.indent }}{{ cat.title }}
-                        </option>
-                    </select>
-                    <select v-else v-model="split.toAccountId" class="split-select">
-                        <option :value="null">{{ $t('transactions.account') }}</option>
-                        <option v-for="acc in accounts.filter(a => a.id !== form.fromAccountId)" :key="acc.id"
-                            :value="acc.id">
-                            {{ acc.title }}
-                        </option>
-                    </select>
-
-                    <button type="button" class="remove-split-btn" @click="removeSplit(index)">×</button>
+                    <input v-model="split.notes" type="text" class="split-notes" :placeholder="$t('common.notes')">
                 </div>
 
                 <button type="button" class="add-split-btn" @click="addSplit">{{ $t('transactions.addSplit') }}</button>
@@ -238,10 +244,11 @@ interface Project {
 }
 
 interface SplitItem {
-    amount: number
+    amount: number | null
     type: 'category' | 'transfer'
     categoryId: number | null
     toAccountId: number | null
+    notes: string
 }
 
 const router = useRouter()
@@ -345,6 +352,10 @@ const splitBalanced = computed(() => {
     return Math.abs(totalSplitAmount.value - (form.value.amount || 0)) < 0.01
 })
 
+const splitRemaining = computed(() => {
+    return totalSplitAmount.value - (form.value.amount || 0)
+})
+
 function formatCurrency(amount: number | null) {
     return `€${(amount || 0).toFixed(2)}`
 }
@@ -357,10 +368,11 @@ function handleSplitToggle() {
 
 function addSplit() {
     splits.value.push({
-        amount: 0,
+        amount: null,
         type: 'category',
         categoryId: null,
-        toAccountId: null
+        toAccountId: null,
+        notes: ''
     })
 }
 
@@ -389,7 +401,7 @@ function goBack() {
 }
 
 async function handleSubmit() {
-    if (!form.value.title || !form.value.amount || !form.value.fromAccountId || !form.value.transactionDate) {
+    if (!form.value.title || form.value.amount == null || !form.value.fromAccountId || !form.value.transactionDate) {
         formError.value = t('common.required')
         return
     }
@@ -432,12 +444,12 @@ async function handleSubmit() {
         if (isSplit.value && splits.value.length > 0) {
             body.splits = splits.value.map(s => ({
                 title: form.value.title,
-                amountFrom: isExpense ? -Math.abs(s.amount) : Math.abs(s.amount),
-                amountTo: s.type === 'transfer' ? Math.abs(s.amount) : null,
-                // category_id: -3 = transfer, otherwise categoryId or -2 if not selected
+                amountFrom: isExpense ? -Math.abs(s.amount || 0) : Math.abs(s.amount || 0),
+                amountTo: s.type === 'transfer' ? Math.abs(s.amount || 0) : null,
                 categoryId: s.type === 'transfer' ? -3 : (s.categoryId || -2),
                 toAccountId: s.type === 'transfer' ? s.toAccountId : null,
-                isTransfer: s.type === 'transfer'
+                isTransfer: s.type === 'transfer',
+                notes: s.notes || null
             }))
         }
 
@@ -703,12 +715,28 @@ onMounted(() => {
 
 .split-item {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: var(--space-xs);
     margin-bottom: var(--space-sm);
     padding: var(--space-sm);
     background: var(--color-bg-glass);
     border-radius: var(--radius-sm);
+}
+
+.split-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.split-notes {
+    width: 100%;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
 }
 
 .split-type-toggle {

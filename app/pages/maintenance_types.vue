@@ -41,6 +41,33 @@
                                     {{ $t('maintenance.noIntervalDefined') }}
                                 </span>
                             </div>
+                            <!-- Status badges -->
+                            <div v-if="getStatusForType(mt.id).length > 0" class="status-badges">
+                                <div v-for="status in getStatusForType(mt.id)" :key="`${mt.id}-${status.vehicleId}`"
+                                    class="status-row">
+                                    <span v-if="mt.vehicleId === null" class="status-vehicle-name">
+                                        {{ status.vehicleName }}
+                                    </span>
+                                    <span v-if="status.lastDate || status.lastOdometer"
+                                        class="status-badge last-badge">
+                                        <span class="status-label">{{ $t('alerts.lastMaintenance') }}:</span>
+                                        <span class="status-value">
+                                            <template v-if="status.lastDate">{{ formatDate(status.lastDate) }}</template>
+                                            <template v-if="status.lastDate && status.lastOdometer"> · </template>
+                                            <template v-if="status.lastOdometer">{{ formatNumber(status.lastOdometer) }} km</template>
+                                        </span>
+                                    </span>
+                                    <span v-if="status.nextDate || status.nextOdometer"
+                                        class="status-badge next-badge">
+                                        <span class="status-label">{{ $t('alerts.nextMaintenance') }}:</span>
+                                        <span class="status-value">
+                                            <template v-if="status.nextDate">{{ formatDate(status.nextDate) }}</template>
+                                            <template v-if="status.nextDate && status.nextOdometer"> · </template>
+                                            <template v-if="status.nextOdometer">{{ formatNumber(status.nextOdometer) }} km</template>
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-arrow">›</div>
                     </div>
@@ -144,6 +171,16 @@ interface Vehicle {
     model: string
 }
 
+interface MaintenanceStatus {
+    maintenanceTypeId: number
+    vehicleId: number
+    vehicleName: string
+    lastDate: string | null
+    lastOdometer: number | null
+    nextDate: string | null
+    nextOdometer: number | null
+}
+
 interface GroupedMaintenance {
     vehicleId: number | null
     vehicleName: string | null
@@ -151,6 +188,7 @@ interface GroupedMaintenance {
 }
 
 const maintenanceTypes = ref<MaintenanceType[]>([])
+const statusMap = ref<Map<string, MaintenanceStatus[]>>(new Map())
 const vehicles = ref<Vehicle[]>([])
 const loading = ref(true)
 const showModal = ref(false)
@@ -204,11 +242,31 @@ function formatNumber(n: number) {
     return n.toLocaleString(locale.value)
 }
 
+function formatDate(dateStr: string) {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString(locale.value, { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function getStatusForType(typeId: number): MaintenanceStatus[] {
+    return statusMap.value.get(String(typeId)) || []
+}
+
 async function loadMaintenanceTypes() {
     loading.value = true
     try {
-        const data = await $fetch<{ maintenanceTypes: MaintenanceType[] }>('/api/maintenance_types')
+        const data = await $fetch<{ maintenanceTypes: MaintenanceType[], maintenanceStatus: MaintenanceStatus[] }>('/api/maintenance_types')
         maintenanceTypes.value = data.maintenanceTypes
+
+        // Build status map keyed by maintenanceTypeId
+        const map = new Map<string, MaintenanceStatus[]>()
+        for (const s of (data.maintenanceStatus || [])) {
+            const key = String(s.maintenanceTypeId)
+            if (!map.has(key)) {
+                map.set(key, [])
+            }
+            map.get(key)!.push(s)
+        }
+        statusMap.value = map
     } catch (error) {
         console.error('Failed to load maintenance types:', error)
     } finally {
@@ -418,6 +476,62 @@ onMounted(async () => {
 .no-interval {
     color: var(--color-text-muted);
     font-style: italic;
+}
+
+/* Status badges */
+.status-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: var(--space-xs);
+}
+
+.status-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.75rem;
+}
+
+.status-vehicle-name {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    min-width: fit-content;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+}
+
+.status-label {
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.status-value {
+    font-weight: 500;
+}
+
+.last-badge {
+    background: var(--color-bg-glass);
+}
+
+.last-badge .status-value {
+    color: var(--color-text-secondary);
+}
+
+.next-badge {
+    background: var(--color-accent-bg);
+}
+
+.next-badge .status-value {
+    color: var(--color-accent);
 }
 
 .card-arrow {

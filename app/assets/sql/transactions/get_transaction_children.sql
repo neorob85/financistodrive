@@ -1,7 +1,7 @@
 -- Get child transactions (for split transactions)
-SELECT 
-  t.id, t.title, t.amount_from, t.amount_to, 
-  t.category_id, t.to_account_id, t.is_transfer,
+SELECT
+  t.id, t.title, t.amount_from, t.amount_to,
+  t.category_id, t.to_account_id, t.is_transfer, t.notes,
   c.title as category_title,
   ta.title as to_account_title
 FROM transactions t

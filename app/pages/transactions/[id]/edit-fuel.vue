@@ -24,8 +24,8 @@
             <!-- Amount -->
             <div class="amount-section">
                 <span class="amount-sign expense">−</span>
-                <input v-model.number="form.fuelTotal" type="number" step="0.01" min="0" placeholder="0.00"
-                    class="amount-input" @input="onFuelFieldEdit('total')">
+                <input v-model.number="form.fuelTotal" type="number" inputmode="decimal" step="0.01" min="0"
+                    placeholder="0.00" class="amount-input" @input="onFuelFieldEdit('total')">
                 <span class="currency-symbol">€</span>
             </div>
 
@@ -50,8 +50,8 @@
             <!-- Odometer -->
             <div class="input-group">
                 <label for="odometer">{{ $t('automotive.mileage') }} *</label>
-                <input id="odometer" v-model.number="form.odometer" type="number" min="0" class="input-field"
-                    placeholder="es. 45000" required>
+                <input id="odometer" v-model.number="form.odometer" type="number" inputmode="numeric" min="0"
+                    class="input-field" placeholder="es. 45000" required>
             </div>
 
             <!-- Fuel Type -->
@@ -66,15 +66,16 @@
             <!-- Fuel Volume -->
             <div class="input-group">
                 <label for="fuelVolume">{{ $t('automotive.liters') }}</label>
-                <input id="fuelVolume" v-model.number="form.fuelVolume" type="number" step="0.01" min="0"
-                    class="input-field" placeholder="es. 45.50" @input="onFuelFieldEdit('volume')">
+                <input id="fuelVolume" v-model.number="form.fuelVolume" type="number" inputmode="decimal" step="0.01"
+                    min="0" class="input-field" placeholder="es. 45.50" @input="onFuelFieldEdit('volume')">
             </div>
 
             <!-- Price per Liter -->
             <div class="input-group">
                 <label for="pricePerLiter">{{ $t('automotive.pricePerLiterFull') }}</label>
-                <input id="pricePerLiter" v-model.number="form.pricePerLiter" type="number" step="0.001" min="0"
-                    class="input-field" placeholder="es. 1.789" @input="onFuelFieldEdit('price')">
+                <input id="pricePerLiter" v-model.number="form.pricePerLiter" type="number" inputmode="decimal"
+                    step="0.001" min="0" class="input-field" placeholder="es. 1.789"
+                    @input="onFuelFieldEdit('price')">
             </div>
 
             <!-- Full Tank -->
