@@ -432,6 +432,7 @@
     "globalCategoriesDesc": "Categorie globali (user_id = NULL), visibili a tutti gli utenti.",
     "categoryNameRequired": "Il nome della categoria è obbligatorio",
     "deleteCategoryConfirm": "Eliminare la categoria",
+    "securityManagement": "Sicurezza",
     "database": "Database",
     "databaseManagement": "Gestione Database",
     "dbConnection": "Connessione Database",
@@ -469,7 +470,20 @@
     "dbResetError": "Errore nel reset del database",
     "deleteConfirm": "Conferma Eliminazione",
     "deleteError": "Errore nell'eliminazione",
-    "nameRequired": "Il nome è obbligatorio"
+    "nameRequired": "Il nome è obbligatorio",
+    "backupRestore": "Backup e Ripristino",
+    "backupRestoreDesc": "Scarica un backup completo del database e degli allegati, o ripristina da un backup precedente.",
+    "fullBackup": "Backup Completo",
+    "fullBackupHint": "Esporta l'intero database (dump SQL) e tutti gli allegati in un file ZIP.",
+    "downloadFullBackup": "Scarica Backup",
+    "backupSuccess": "Backup scaricato con successo!",
+    "backupError": "Errore nella creazione del backup.",
+    "fullRestore": "Ripristino Completo",
+    "fullRestoreHint": "Ripristina l'intero database e gli allegati da un backup. Il database corrente verrà completamente sostituito.",
+    "uploadFullRestore": "Carica Backup",
+    "restoreConfirm": "ATTENZIONE: Il ripristino sostituirà completamente il database attuale e tutti gli allegati. Tutti i dati correnti verranno persi.\n\nSei sicuro di voler procedere?",
+    "restoreSuccess": "Database ripristinato con successo! La pagina verrà ricaricata.",
+    "restoreError": "Errore nel ripristino del database."
   },
   "settings": {
     "title": "Impostazioni",
@@ -521,7 +535,20 @@
     "pushDenied": "Le notifiche sono state bloccate. Per riattivarle, modifica i permessi nelle impostazioni del browser.",
     "pushError": "Errore durante l'attivazione delle notifiche push.",
     "pushStatusActive": "Attive",
-    "pushStatusInactive": "Non attive"
+    "pushStatusInactive": "Non attive",
+    "backupRestore": "Backup e Ripristino",
+    "backupRestoreDesc": "Scarica un backup di tutti i tuoi dati o ripristina da un backup precedente.",
+    "backup": "Backup",
+    "backupHint": "Scarica un file ZIP con tutti i tuoi dati e allegati.",
+    "downloadBackup": "Scarica Backup",
+    "backupSuccess": "Backup scaricato con successo!",
+    "backupError": "Errore nella creazione del backup.",
+    "restore": "Ripristino",
+    "restoreHint": "Carica un file ZIP di backup per ripristinare tutti i tuoi dati. Questo sostituirà tutti i dati attuali.",
+    "uploadRestore": "Carica Backup",
+    "restoreConfirm": "ATTENZIONE: Il ripristino di un backup sostituirà permanentemente TUTTI i tuoi dati attuali (conti, transazioni, allegati, ecc.). Questa azione non può essere annullata.\n\nSei sicuro di voler procedere?",
+    "restoreSuccess": "Dati ripristinati con successo! La pagina verrà ricaricata.",
+    "restoreError": "Errore nel ripristino dei dati."
   },
   "user": {
     "defaultName": "Utente"
@@ -540,7 +567,17 @@
     "connectionSuccess": "Connessione riuscita!",
     "connectionError": "Errore durante il test della connessione",
     "initSuccess": "Database inizializzato con successo!",
-    "initError": "Errore durante l'inizializzazione del database"
+    "initError": "Errore durante l'inizializzazione del database",
+    "restoreSubtitle": "Hai un backup da ripristinare?",
+    "fullBackupOption": "Ho un backup completo",
+    "fullBackupOptionDesc": "Ripristina un backup completo del database (generato dalla sezione admin). Include tutti gli utenti e i dati.",
+    "userBackupOption": "Ho un backup utente",
+    "userBackupOptionDesc": "Crea prima il tuo account, poi ripristina il backup dalla pagina Impostazioni.",
+    "noBackupOption": "Non ho nessun backup",
+    "noBackupOptionDesc": "Inizia da zero con un database vuoto.",
+    "restoring": "Ripristino in corso...",
+    "restoreSuccess": "Backup ripristinato con successo!",
+    "restoreError": "Errore durante il ripristino del backup"
   },
   "reports": {
     "title": "Report",

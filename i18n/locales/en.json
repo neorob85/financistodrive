@@ -432,6 +432,7 @@
     "globalCategoriesDesc": "Global categories (user_id = NULL), visible to all users.",
     "categoryNameRequired": "Category name is required",
     "deleteCategoryConfirm": "Delete category",
+    "securityManagement": "Security",
     "database": "Database",
     "databaseManagement": "Database Management",
     "dbConnection": "Database Connection",
@@ -469,7 +470,20 @@
     "dbResetError": "Error resetting database",
     "deleteConfirm": "Confirm Deletion",
     "deleteError": "Error deleting",
-    "nameRequired": "Name is required"
+    "nameRequired": "Name is required",
+    "backupRestore": "Backup & Restore",
+    "backupRestoreDesc": "Download a full backup of the database and attachments, or restore from a previous backup.",
+    "fullBackup": "Full Backup",
+    "fullBackupHint": "Export the entire database (SQL dump) and all attachments as a ZIP file.",
+    "downloadFullBackup": "Download Backup",
+    "backupSuccess": "Backup downloaded successfully!",
+    "backupError": "Error creating backup.",
+    "fullRestore": "Full Restore",
+    "fullRestoreHint": "Restore the entire database and attachments from a backup. The current database will be completely replaced.",
+    "uploadFullRestore": "Upload Backup",
+    "restoreConfirm": "WARNING: Restoring will completely replace the current database and all attachments. All current data will be lost.\n\nAre you sure you want to proceed?",
+    "restoreSuccess": "Database restored successfully! The page will reload.",
+    "restoreError": "Error restoring database."
   },
   "settings": {
     "title": "Settings",
@@ -521,7 +535,20 @@
     "pushDenied": "Notifications have been blocked. To re-enable them, change the permissions in your browser settings.",
     "pushError": "Error enabling push notifications.",
     "pushStatusActive": "Active",
-    "pushStatusInactive": "Not active"
+    "pushStatusInactive": "Not active",
+    "backupRestore": "Backup & Restore",
+    "backupRestoreDesc": "Download a backup of all your data or restore from a previous backup.",
+    "backup": "Backup",
+    "backupHint": "Download a ZIP file with all your data and attachments.",
+    "downloadBackup": "Download Backup",
+    "backupSuccess": "Backup downloaded successfully!",
+    "backupError": "Error creating backup.",
+    "restore": "Restore",
+    "restoreHint": "Upload a backup ZIP file to restore all your data. This will replace all current data.",
+    "uploadRestore": "Upload Backup",
+    "restoreConfirm": "WARNING: Restoring a backup will permanently replace ALL your current data (accounts, transactions, attachments, etc.). This action cannot be undone.\n\nAre you sure you want to proceed?",
+    "restoreSuccess": "Data restored successfully! The page will reload.",
+    "restoreError": "Error restoring data."
   },
   "user": {
     "defaultName": "User"
@@ -540,7 +567,17 @@
     "connectionSuccess": "Connection successful!",
     "connectionError": "Error during connection test",
     "initSuccess": "Database initialized successfully!",
-    "initError": "Error during database initialization"
+    "initError": "Error during database initialization",
+    "restoreSubtitle": "Do you have a backup to restore?",
+    "fullBackupOption": "I have a full backup",
+    "fullBackupOptionDesc": "Restore a full database backup (generated from the admin section). Includes all users and data.",
+    "userBackupOption": "I have a user backup",
+    "userBackupOptionDesc": "Create your account first, then restore the backup from the Settings page.",
+    "noBackupOption": "I don't have a backup",
+    "noBackupOptionDesc": "Start fresh with an empty database.",
+    "restoring": "Restoring...",
+    "restoreSuccess": "Backup restored successfully!",
+    "restoreError": "Error restoring backup"
   },
   "reports": {
     "title": "Reports",

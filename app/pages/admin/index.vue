@@ -53,6 +53,13 @@
                 <span class="admin-card-title">{{ $t('admin.fuelsManagement') }}</span>
             </NuxtLink>
 
+            <NuxtLink to="/admin/security" class="admin-card glass-card">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <span class="admin-card-title">{{ $t('admin.securityManagement') }}</span>
+            </NuxtLink>
+
             <NuxtLink to="/admin/database" class="admin-card glass-card">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <ellipse cx="12" cy="5" rx="9" ry="3" />

@@ -200,6 +200,43 @@
         </div>
       </div>
     </section>
+
+    <!-- Backup & Restore Section -->
+    <section class="settings-section">
+      <h2>{{ $t('settings.backupRestore') }}</h2>
+      <div class="glass-card">
+        <div class="backup-restore-section">
+          <p class="section-description">{{ $t('settings.backupRestoreDesc') }}</p>
+
+          <div class="backup-row">
+            <div class="backup-info">
+              <strong>{{ $t('settings.backup') }}</strong>
+              <span class="backup-hint">{{ $t('settings.backupHint') }}</span>
+            </div>
+            <button class="btn btn-primary" @click="handleBackup" :disabled="backingUp">
+              <span v-if="backingUp" class="spinner"></span>
+              {{ $t('settings.downloadBackup') }}
+            </button>
+          </div>
+
+          <div class="backup-row">
+            <div class="backup-info">
+              <strong>{{ $t('settings.restore') }}</strong>
+              <span class="backup-hint">{{ $t('settings.restoreHint') }}</span>
+            </div>
+            <label class="btn btn-warning btn-file" :class="{ disabled: restoring }">
+              <span v-if="restoring" class="spinner"></span>
+              {{ $t('settings.uploadRestore') }}
+              <input type="file" accept=".zip" @change="handleRestore" :disabled="restoring" style="display: none">
+            </label>
+          </div>
+
+          <div v-if="backupMessage" class="message" :class="backupMessage.type">
+            {{ backupMessage.text }}
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -443,6 +480,73 @@ function formatDate(dateStr: string | null): string {
     year: 'numeric'
   })
 }
+
+// Backup & Restore
+const backingUp = ref(false)
+const restoring = ref(false)
+const backupMessage = ref<Message | null>(null)
+
+async function handleBackup() {
+  backingUp.value = true
+  backupMessage.value = null
+  try {
+    const response = await $fetch.raw('/api/backup', { responseType: 'blob' })
+    const blob = response._data as Blob
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const disposition = response.headers.get('content-disposition')
+    const match = disposition?.match(/filename="?(.+?)"?$/)
+    a.download = match?.[1] || `backup_financistodrive_${new Date().toISOString().slice(0, 10)}.zip`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    backupMessage.value = { type: 'success', text: t('settings.backupSuccess') }
+  } catch {
+    backupMessage.value = { type: 'error', text: t('settings.backupError') }
+  } finally {
+    backingUp.value = false
+  }
+}
+
+async function handleRestore(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  if (!confirm(t('settings.restoreConfirm'))) {
+    input.value = ''
+    return
+  }
+
+  restoring.value = true
+  backupMessage.value = null
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    await $fetch('/api/backup/restore', {
+      method: 'POST',
+      body: formData
+    })
+
+    backupMessage.value = { type: 'success', text: t('settings.restoreSuccess') }
+
+    setTimeout(() => {
+      window.location.reload()
+    }, 1500)
+  } catch (error: any) {
+    backupMessage.value = {
+      type: 'error',
+      text: error.data?.message || t('settings.restoreError')
+    }
+  } finally {
+    restoring.value = false
+    input.value = ''
+  }
+}
 </script>
 
 <style scoped>
@@ -660,6 +764,7 @@ function formatDate(dateStr: string | null): string {
 
 .btn-warning {
   background: linear-gradient(135deg, var(--color-warning), var(--color-warning-light));
+  color: var(--color-text-on-accent);
 }
 
 .btn-success {
@@ -700,6 +805,69 @@ function formatDate(dateStr: string | null): string {
 
   .token-actions .btn {
     flex: 1;
+  }
+}
+
+/* Backup & Restore */
+.backup-restore-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.section-description {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.backup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.backup-row:last-of-type {
+  border-bottom: none;
+}
+
+.backup-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.backup-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.btn-file {
+  cursor: pointer;
+  box-sizing: border-box;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.btn-file.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (max-width: 500px) {
+  .backup-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .backup-row .btn,
+  .backup-row .btn-file {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
   }
 }
 </style>

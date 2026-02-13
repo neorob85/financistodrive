@@ -70,49 +70,49 @@
                     </div>
                 </section>
 
-                <!-- JWT Reset -->
+                <!-- Backup & Restore -->
                 <section class="section">
                     <h2 class="section-title">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        {{ $t('admin.jwtToken') }}
+                        {{ $t('admin.backupRestore') }}
                     </h2>
                     <div class="glass-card section-card">
                         <p class="section-desc">
-                            {{ $t('admin.jwtResetWarning') }}
+                            {{ $t('admin.backupRestoreDesc') }}
                         </p>
-                        <div v-if="jwtMessage" :class="['alert', jwtMessage.type === 'success' ? 'alert-success' : 'alert-error']">
-                            {{ jwtMessage.text }}
-                        </div>
-                        <button class="btn btn-warning" :disabled="resettingJwt" @click="confirmResetJwt">
-                            <span v-if="resettingJwt" class="spinner"></span>
-                            {{ $t('admin.resetJwtSecret') }}
-                        </button>
-                    </div>
-                </section>
 
-                <!-- VAPID Keys -->
-                <section class="section">
-                    <h2 class="section-title">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
-                        {{ $t('admin.vapidKeys') }}
-                    </h2>
-                    <div class="glass-card section-card">
-                        <p class="section-desc">
-                            {{ $t('admin.vapidResetWarning') }}
-                        </p>
-                        <div v-if="vapidMessage" :class="['alert', vapidMessage.type === 'success' ? 'alert-success' : 'alert-error']">
-                            {{ vapidMessage.text }}
+                        <div class="backup-row">
+                            <div class="backup-info">
+                                <strong>{{ $t('admin.fullBackup') }}</strong>
+                                <span class="backup-hint">{{ $t('admin.fullBackupHint') }}</span>
+                            </div>
+                            <button class="btn btn-primary" @click="handleAdminBackup" :disabled="backingUp">
+                                <span v-if="backingUp" class="spinner"></span>
+                                {{ $t('admin.downloadFullBackup') }}
+                            </button>
                         </div>
-                        <button class="btn btn-warning" :disabled="resettingVapid" @click="confirmResetVapid">
-                            <span v-if="resettingVapid" class="spinner"></span>
-                            {{ $t('admin.resetVapidKeys') }}
-                        </button>
+
+                        <div class="backup-row last">
+                            <div class="backup-info">
+                                <strong>{{ $t('admin.fullRestore') }}</strong>
+                                <span class="backup-hint">{{ $t('admin.fullRestoreHint') }}</span>
+                            </div>
+                            <label class="btn btn-warning btn-file" :class="{ disabled: restoring }">
+                                <span v-if="restoring" class="spinner"></span>
+                                {{ $t('admin.uploadFullRestore') }}
+                                <input type="file" accept=".zip" @change="handleAdminRestore" :disabled="restoring"
+                                    style="display: none">
+                            </label>
+                        </div>
+
+                        <div v-if="backupMessage"
+                            :class="['alert', backupMessage.type === 'success' ? 'alert-success' : 'alert-error']">
+                            {{ backupMessage.text }}
+                        </div>
                     </div>
                 </section>
 
@@ -140,50 +140,6 @@
                     </div>
                 </section>
             </template>
-        </div>
-
-        <!-- JWT Reset Confirmation -->
-        <div v-if="showJwtConfirm" class="modal-overlay" @click.self="showJwtConfirm = false">
-            <div class="modal glass-card modal-sm">
-                <div class="modal-header">
-                    <h2>{{ $t('admin.resetJwtConfirm') }}</h2>
-                    <button class="close-btn" @click="showJwtConfirm = false">&times;</button>
-                </div>
-                <p class="confirm-text">
-                    {{ $t('admin.resetJwtConfirmText') }}
-                </p>
-                <div class="modal-actions">
-                    <div class="actions-right">
-                        <button class="btn btn-secondary" @click="showJwtConfirm = false">{{ $t('common.cancel') }}</button>
-                        <button class="btn btn-warning" @click="resetJwt" :disabled="resettingJwt">
-                            <span v-if="resettingJwt" class="spinner"></span>
-                            {{ $t('common.confirm') }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VAPID Reset Confirmation -->
-        <div v-if="showVapidConfirm" class="modal-overlay" @click.self="showVapidConfirm = false">
-            <div class="modal glass-card modal-sm">
-                <div class="modal-header">
-                    <h2>{{ $t('admin.resetVapidConfirm') }}</h2>
-                    <button class="close-btn" @click="showVapidConfirm = false">&times;</button>
-                </div>
-                <p class="confirm-text">
-                    {{ $t('admin.resetVapidConfirmText') }}
-                </p>
-                <div class="modal-actions">
-                    <div class="actions-right">
-                        <button class="btn btn-secondary" @click="showVapidConfirm = false">{{ $t('common.cancel') }}</button>
-                        <button class="btn btn-warning" @click="resetVapid" :disabled="resettingVapid">
-                            <span v-if="resettingVapid" class="spinner"></span>
-                            {{ $t('common.confirm') }}
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Database Reset Confirmation -->
@@ -235,17 +191,14 @@ interface DbConfig {
 const loading = ref(true)
 const testing = ref(false)
 const savingConfig = ref(false)
-const resettingJwt = ref(false)
-const resettingVapid = ref(false)
 const resettingDb = ref(false)
+const backingUp = ref(false)
+const restoring = ref(false)
 
 const configMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
-const jwtMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
-const vapidMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
 const resetMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
+const backupMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
 
-const showJwtConfirm = ref(false)
-const showVapidConfirm = ref(false)
 const showDbResetConfirm = ref(false)
 const confirmText = ref('')
 
@@ -317,52 +270,6 @@ async function saveConfig() {
     }
 }
 
-function confirmResetJwt() {
-    jwtMessage.value = null
-    showJwtConfirm.value = true
-}
-
-async function resetJwt() {
-    resettingJwt.value = true
-    jwtMessage.value = null
-
-    try {
-        await $fetch('/api/admin/database/reset-jwt', { method: 'POST' })
-        showJwtConfirm.value = false
-        router.push('/login')
-    } catch (error: any) {
-        jwtMessage.value = {
-            type: 'error',
-            text: error.data?.message || t('admin.jwtResetError')
-        }
-    } finally {
-        resettingJwt.value = false
-    }
-}
-
-function confirmResetVapid() {
-    vapidMessage.value = null
-    showVapidConfirm.value = true
-}
-
-async function resetVapid() {
-    resettingVapid.value = true
-    vapidMessage.value = null
-
-    try {
-        await $fetch('/api/admin/database/reset-vapid', { method: 'POST' })
-        showVapidConfirm.value = false
-        vapidMessage.value = { type: 'success', text: t('admin.vapidResetSuccess') }
-    } catch (error: any) {
-        vapidMessage.value = {
-            type: 'error',
-            text: error.data?.message || t('admin.vapidResetError')
-        }
-    } finally {
-        resettingVapid.value = false
-    }
-}
-
 function confirmResetDb() {
     resetMessage.value = null
     confirmText.value = ''
@@ -386,6 +293,68 @@ async function resetDatabase() {
         }
     } finally {
         resettingDb.value = false
+    }
+}
+
+async function handleAdminBackup() {
+    backingUp.value = true
+    backupMessage.value = null
+
+    try {
+        const response = await $fetch.raw('/api/admin/database/backup', { responseType: 'blob' })
+        const blob = response._data as Blob
+        const disposition = response.headers.get('content-disposition') || ''
+        const match = disposition.match(/filename="?([^"]+)"?/)
+        const filename = match ? match[1] : `admin_backup_${new Date().toISOString().slice(0, 10)}.zip`
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+
+        backupMessage.value = { type: 'success', text: t('admin.backupSuccess') }
+    } catch (error: any) {
+        backupMessage.value = {
+            type: 'error',
+            text: error.data?.message || t('admin.backupError')
+        }
+    } finally {
+        backingUp.value = false
+    }
+}
+
+async function handleAdminRestore(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+    input.value = ''
+
+    if (!confirm(t('admin.restoreConfirm'))) return
+
+    restoring.value = true
+    backupMessage.value = null
+
+    try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        await $fetch('/api/admin/database/restore', {
+            method: 'POST',
+            body: formData
+        })
+
+        backupMessage.value = { type: 'success', text: t('admin.restoreSuccess') }
+    } catch (error: any) {
+        backupMessage.value = {
+            type: 'error',
+            text: error.data?.message || t('admin.restoreError')
+        }
+    } finally {
+        restoring.value = false
     }
 }
 
@@ -487,8 +456,20 @@ onMounted(() => loadConfig())
 .spinner { width: 16px; height: 16px; border: 2px solid var(--color-spinner-border); border-top-color: var(--color-spinner-active); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.backup-row {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+    padding-bottom: var(--space-md); margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+.backup-row.last { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.backup-info { display: flex; flex-direction: column; gap: var(--space-xs); }
+.backup-hint { font-size: 0.8rem; color: var(--color-text-muted); }
+.btn-file { cursor: pointer; box-sizing: border-box; line-height: 1.4; white-space: nowrap; }
+.btn-file.disabled { opacity: 0.6; pointer-events: none; }
+
 @media (max-width: 500px) {
     .form-grid { grid-template-columns: 1fr; }
     .form-actions { flex-direction: column; }
+    .backup-row { flex-direction: column; align-items: stretch; }
 }
 </style>
