@@ -89,7 +89,7 @@
             <div class="input-group">
                 <label for="frequency">{{ $t('schedules.frequency') }} *</label>
                 <select id="frequency" v-model="form.frequency" class="input-field" required>
-                    <option value="" disabled>{{ $t('schedules.selectFrequency') }}</option>
+                    <option :value="null" disabled>{{ $t('schedules.selectFrequency') }}</option>
                     <option value="DAILY">{{ $t('schedules.daily') }}</option>
                     <option value="WEEKLY">{{ $t('schedules.weekly') }}</option>
                     <option value="BIWEEKLY">{{ $t('schedules.biweekly') }}</option>
@@ -117,7 +117,19 @@
             <!-- End Date -->
             <div class="input-group">
                 <label for="endDate">{{ $t('schedules.endDateOptional') }}</label>
-                <input id="endDate" v-model="form.endDate" type="datetime-local" class="input-field">
+                <div class="input-with-clear">
+                    <input id="endDate" v-model="form.endDate"
+                        :type="endDateActive || form.endDate ? 'datetime-local' : 'text'"
+                        class="input-field"
+                        :placeholder="$t('schedules.endDateOptional')"
+                        @focus="endDateActive = true"
+                        @blur="endDateActive = false">
+                    <button v-if="form.endDate" type="button" class="clear-btn" @click="form.endDate = ''">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Project -->
@@ -192,6 +204,7 @@ const transactionType = ref<'expense' | 'income' | 'transfer'>('expense')
 const formError = ref('')
 const saving = ref(false)
 const loadingData = ref(true)
+const endDateActive = ref(false)
 
 const form = ref({
     title: '',
@@ -201,7 +214,7 @@ const form = ref({
     categoryId: null as number | null,
     payeeId: null as number | null,
     projectId: null as number | null,
-    frequency: '',
+    frequency: null as string | null,
     startDate: '',
     nextTransactionDate: '',
     endDate: '',
@@ -553,6 +566,32 @@ onMounted(() => loadData())
     width: 20px;
     height: 20px;
     accent-color: var(--color-accent);
+}
+
+/* Input with clear button */
+.input-with-clear {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.input-with-clear .input-field {
+    flex: 1;
+    min-width: 0;
+}
+
+.clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--color-error-bg);
+    color: var(--color-error);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 /* Form Error */

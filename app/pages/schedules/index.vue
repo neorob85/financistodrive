@@ -37,6 +37,7 @@
                             <span class="tx-badge">{{ getTime(s.nextTransactionDate) }}</span>
                             <span class="tx-badge">{{ s.fromAccountTitle }}</span>
                             <span v-if="s.categoryTitle" class="tx-category">{{ s.categoryTitle }}</span>
+                            <span v-if="s.endDate" class="tx-badge end-date-badge">{{ $t('schedules.endDate') }}: {{ formatShortDate(s.endDate) }}</span>
                         </div>
                     </div>
                     <div class="tx-amount" :class="getType(s)">
@@ -541,6 +542,11 @@ onMounted(() => fetchSchedules())
     background: var(--color-bg-glass);
     padding: 2px 8px;
     border-radius: var(--radius-sm);
+}
+
+.end-date-badge {
+    background: var(--color-accent-bg);
+    color: var(--color-accent);
 }
 
 .tx-frequency {

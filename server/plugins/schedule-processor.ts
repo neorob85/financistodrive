@@ -42,6 +42,15 @@ async function processSchedules() {
 
         const pool = await getPool()
 
+        // Deactivate schedules whose end_date has passed
+        await pool.query(
+            `UPDATE transaction_schedules
+             SET is_active = 0
+             WHERE is_active = 1
+             AND end_date IS NOT NULL
+             AND end_date < NOW()`
+        )
+
         // Get all active schedules that are due
         const dueSchedules = await pool.query(
             `SELECT * FROM transaction_schedules

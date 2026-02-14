@@ -781,6 +781,7 @@ onMounted(() => {
     border-radius: var(--radius-sm);
     color: var(--color-text-primary);
     font-size: 0.85rem;
+    line-height: 1.4;
     -webkit-appearance: none;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");

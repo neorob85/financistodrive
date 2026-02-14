@@ -667,6 +667,7 @@ onMounted(() => {
     background: var(--color-bg-elevated);
     color: var(--color-text-primary);
     font-size: 1rem;
+    line-height: 1.4;
 }
 
 .input-field:focus {
