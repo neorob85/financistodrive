@@ -1,5 +1,66 @@
 <template>
   <div class="transactions-page">
+    <!-- Filter bar -->
+    <div v-if="!loading || transactions.length > 0" class="filter-bar">
+      <button class="filter-toggle" @click="showFilters = !showFilters" :class="{ active: activeFilterCount > 0 }">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+        </svg>
+        <span>{{ $t('transactions.filters.title') }}</span>
+        <span v-if="activeFilterCount > 0" class="filter-count">{{ activeFilterCount }}</span>
+      </button>
+      <button v-if="activeFilterCount > 0" class="filter-clear" @click="clearFilters">
+        {{ $t('transactions.filters.clearAll') }}
+      </button>
+    </div>
+
+    <div v-if="showFilters" class="filter-panel">
+      <div class="filter-grid">
+        <div class="input-group">
+          <label>{{ $t('transactions.category') }}</label>
+          <select v-model="filterCategoryId" class="input-field">
+            <option :value="null">{{ $t('transactions.filters.allCategories') }}</option>
+            <option v-for="cat in filterCategories" :key="cat.id" :value="cat.id">{{ cat.label }}</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>{{ $t('transactions.account') }}</label>
+          <select v-model="filterAccountId" class="input-field">
+            <option :value="null">{{ $t('transactions.filters.allAccounts') }}</option>
+            <option v-for="acc in filterAccounts" :key="acc.id" :value="acc.id">{{ acc.title }}</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>{{ $t('transactions.project') }}</label>
+          <select v-model="filterProjectId" class="input-field">
+            <option :value="null">{{ $t('transactions.filters.allProjects') }}</option>
+            <option v-for="proj in filterProjects" :key="proj.id" :value="proj.id">{{ proj.title }}</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>{{ $t('automotive.vehicle') }}</label>
+          <select v-model="filterVehicleId" class="input-field">
+            <option :value="null">{{ $t('transactions.filters.allVehicles') }}</option>
+            <option v-for="v in filterVehicles" :key="v.id" :value="v.id">{{ v.brand }} {{ v.model }}</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>{{ $t('transactions.filters.dateFrom') }}</label>
+          <input v-model="filterDateFrom"
+            :type="dateFromFocused || filterDateFrom ? 'date' : 'text'"
+            @focus="dateFromFocused = true" @blur="dateFromFocused = false"
+            :placeholder="$t('transactions.filters.dateFrom')" class="input-field">
+        </div>
+        <div class="input-group">
+          <label>{{ $t('transactions.filters.dateTo') }}</label>
+          <input v-model="filterDateTo"
+            :type="dateToFocused || filterDateTo ? 'date' : 'text'"
+            @focus="dateToFocused = true" @blur="dateToFocused = false"
+            :placeholder="$t('transactions.filters.dateTo')" class="input-field">
+        </div>
+      </div>
+    </div>
+
     <!-- Loading state -->
     <div v-if="loading && transactions.length === 0" class="loading-state">
       <div class="spinner-lg"></div>
@@ -11,6 +72,12 @@
       <div class="empty-icon">💳</div>
       <h2>{{ $t('transactions.noTransactions') }}</h2>
       <p>{{ $t('transactions.addFirst') }}</p>
+    </div>
+
+    <!-- No filter results -->
+    <div v-else-if="filteredTransactions.length === 0 && activeFilterCount > 0" class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h2>{{ $t('transactions.filters.noResults') }}</h2>
     </div>
 
     <!-- Transactions list -->
@@ -61,11 +128,44 @@ interface Transaction {
   amountTo?: number | null
   transactionDate: string
   toAccountId?: number
+  categoryId?: number | null
   categoryTitle?: string
+  fromAccountId?: number | null
   accountTitle: string
+  projectId?: number | null
+  projectTitle?: string | null
+  vehicleId?: number | null
   balanceAmount: number
   vehicleName?: string | null
   odometer?: number | null
+}
+
+interface FilterAccount {
+  id: number
+  title: string
+}
+
+interface FilterCategory {
+  id: number
+  title: string
+  parentId: number | null
+  children?: FilterCategory[]
+}
+
+interface FlatFilterCategory {
+  id: number
+  label: string
+}
+
+interface FilterProject {
+  id: number
+  title: string
+}
+
+interface FilterVehicle {
+  id: number
+  brand: string
+  model: string
 }
 
 interface TransactionChild {
@@ -160,6 +260,126 @@ const periodBalances = ref<Record<string, number>>({})
 const listRef = ref<HTMLElement | null>(null)
 const loadMoreRef = ref<HTMLElement | null>(null)
 
+// Filters
+const showFilters = ref(false)
+const filterCategoryId = ref<number | null>(null)
+const filterAccountId = ref<number | null>(null)
+const filterProjectId = ref<number | null>(null)
+const filterVehicleId = ref<number | null>(null)
+const filterDateFrom = ref('')
+const filterDateTo = ref('')
+const dateFromFocused = ref(false)
+const dateToFocused = ref(false)
+
+// Master data for filter dropdowns
+const filterAccounts = ref<FilterAccount[]>([])
+const filterCategories = ref<FlatFilterCategory[]>([])
+const filterProjects = ref<FilterProject[]>([])
+const filterVehicles = ref<FilterVehicle[]>([])
+
+const activeFilterCount = computed(() => {
+  let count = 0
+  if (filterCategoryId.value !== null) count++
+  if (filterAccountId.value !== null) count++
+  if (filterProjectId.value !== null) count++
+  if (filterVehicleId.value !== null) count++
+  if (filterDateFrom.value) count++
+  if (filterDateTo.value) count++
+  return count
+})
+
+function clearFilters() {
+  filterCategoryId.value = null
+  filterAccountId.value = null
+  filterProjectId.value = null
+  filterVehicleId.value = null
+  filterDateFrom.value = ''
+  filterDateTo.value = ''
+}
+
+function flattenCategories(categories: FilterCategory[], depth = 0): FlatFilterCategory[] {
+  const result: FlatFilterCategory[] = []
+  for (const cat of categories) {
+    const prefix = depth > 0 ? '\u00A0\u00A0'.repeat(depth) + '\u2514\u2500 ' : ''
+    result.push({ id: cat.id, label: prefix + cat.title })
+    if (cat.children?.length) {
+      result.push(...flattenCategories(cat.children, depth + 1))
+    }
+  }
+  return result
+}
+
+// Parse date string as local time (shared helper)
+function parseLocalDate(dateStr: string): Date {
+  const normalized = dateStr.replace('T', ' ').replace('Z', '')
+  const parts = normalized.split(' ')
+  const datePart = parts[0] || ''
+  const timePart = parts[1] || '00:00:00'
+  const dateParts = datePart.split('-')
+  const timeParts = timePart.split(':')
+  return new Date(
+    parseInt(dateParts[0] || '0', 10),
+    parseInt(dateParts[1] || '1', 10) - 1,
+    parseInt(dateParts[2] || '1', 10),
+    parseInt(timeParts[0] || '0', 10),
+    parseInt(timeParts[1] || '0', 10),
+    parseInt(timeParts[2] || '0', 10)
+  )
+}
+
+const filteredTransactions = computed(() => {
+  if (activeFilterCount.value === 0) return transactions.value
+
+  return transactions.value.filter(tx => {
+    if (filterCategoryId.value !== null && tx.categoryId !== filterCategoryId.value) return false
+    if (filterAccountId.value !== null && tx.fromAccountId !== filterAccountId.value) return false
+    if (filterProjectId.value !== null && tx.projectId !== filterProjectId.value) return false
+    if (filterVehicleId.value !== null && tx.vehicleId !== filterVehicleId.value) return false
+    if (filterDateFrom.value) {
+      const txDate = parseLocalDate(tx.transactionDate)
+      const from = new Date(filterDateFrom.value + 'T00:00:00')
+      if (txDate < from) return false
+    }
+    if (filterDateTo.value) {
+      const txDate = parseLocalDate(tx.transactionDate)
+      const to = new Date(filterDateTo.value + 'T23:59:59')
+      if (txDate > to) return false
+    }
+    return true
+  })
+})
+
+async function fetchFilterData() {
+  try {
+    const [accountsData, categoriesData, projectsData, vehiclesData] = await Promise.all([
+      $fetch<{ accounts: FilterAccount[] }>('/api/accounts'),
+      $fetch<{ categories: FilterCategory[] }>('/api/categories'),
+      $fetch<{ projects: FilterProject[] }>('/api/projects'),
+      $fetch<{ vehicles: FilterVehicle[] }>('/api/vehicles')
+    ])
+    filterAccounts.value = accountsData.accounts || []
+    filterCategories.value = flattenCategories(categoriesData.categories || [])
+    filterProjects.value = (projectsData.projects || []).filter((p: any) => p.isActive)
+    filterVehicles.value = (vehiclesData.vehicles || []).filter((v: any) => v.isActive)
+  } catch (error) {
+    console.error('Failed to fetch filter data:', error)
+  }
+}
+
+// Auto-load more when filters are active and not enough results
+const autoLoadingMore = ref(false)
+
+watch([filteredTransactions, hasMore], async () => {
+  if (activeFilterCount.value === 0) return
+  if (!hasMore.value || autoLoadingMore.value || loadingMore.value || loading.value) return
+  if (filteredTransactions.value.length < limit) {
+    autoLoadingMore.value = true
+    page.value++
+    await fetchTransactions(page.value, true)
+    autoLoadingMore.value = false
+  }
+})
+
 // Detail modal
 const showDetail = ref(false)
 const loadingDetail = ref(false)
@@ -195,7 +415,7 @@ const groupedTransactions = computed(() => {
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  for (const tx of transactions.value) {
+  for (const tx of filteredTransactions.value) {
     const txDate = new Date(tx.transactionDate)
     const periodKey = getPeriodKey(txDate, now, today, yesterday, thisMonthStart, lastMonthStart)
 
@@ -348,6 +568,7 @@ async function deleteTransaction() {
 onMounted(() => {
   fetchPeriodBalances()
   fetchTransactions(1)
+  fetchFilterData()
   setupInfiniteScroll()
 })
 
@@ -375,6 +596,84 @@ function setupInfiniteScroll() {
 .transactions-page {
   min-height: 100%;
   padding: var(--space-lg);
+}
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-toggle:hover,
+.filter-toggle.active {
+  border-color: var(--color-border-focus);
+  color: var(--color-accent);
+}
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-on-accent);
+  background: var(--color-accent);
+  border-radius: 10px;
+}
+
+.filter-clear {
+  padding: var(--space-sm) var(--space-md);
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--color-error);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.filter-panel {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-sm);
+}
+
+.filter-grid .input-group label {
+  font-size: 0.75rem;
+}
+
+.filter-grid .input-field {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.85rem;
 }
 
 .loading-state,

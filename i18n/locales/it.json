@@ -162,6 +162,17 @@
       "thisMonth": "Questo Mese",
       "lastMonth": "Mese Scorso",
       "previous": "Precedenti"
+    },
+    "filters": {
+      "title": "Filtri",
+      "dateFrom": "Da",
+      "dateTo": "A",
+      "allCategories": "Tutte le categorie",
+      "allAccounts": "Tutti i conti",
+      "allProjects": "Tutti i progetti",
+      "allVehicles": "Tutti i veicoli",
+      "clearAll": "Azzera filtri",
+      "noResults": "Nessuna transazione corrisponde ai filtri"
     }
   },
   "automotive": {

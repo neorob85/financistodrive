@@ -162,6 +162,17 @@
       "thisMonth": "This Month",
       "lastMonth": "Last Month",
       "previous": "Previous"
+    },
+    "filters": {
+      "title": "Filters",
+      "dateFrom": "From",
+      "dateTo": "To",
+      "allCategories": "All categories",
+      "allAccounts": "All accounts",
+      "allProjects": "All projects",
+      "allVehicles": "All vehicles",
+      "clearAll": "Clear filters",
+      "noResults": "No transactions match the filters"
     }
   },
   "automotive": {
