@@ -58,6 +58,20 @@
                 </div>
             </div>
 
+            <!-- Root category expense bar chart -->
+            <div v-if="maxRootExpense > 0" class="chart-section glass-card">
+                <h3 class="section-title">{{ $t('reports.expensesByRootCategory') }}</h3>
+                <div class="bar-chart">
+                    <div v-for="cat in sortedRootByExpenses" :key="'root-' + cat.categoryId" class="bar-row">
+                        <div class="bar-label">{{ cat.categoryTitle }}</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" :style="{ width: (cat.expenses / maxRootExpense * 100) + '%' }"></div>
+                        </div>
+                        <div class="bar-value">€{{ formatAmount(cat.expenses) }}</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Expense bar chart -->
             <div v-if="maxExpense > 0" class="chart-section glass-card">
                 <h3 class="section-title">{{ $t('reports.expensesByCategory') }}</h3>
@@ -131,6 +145,7 @@ interface Totals {
 
 const loading = ref(true)
 const categories = ref<CategoryReport[]>([])
+const rootCategories = ref<CategoryReport[]>([])
 const totals = ref<Totals>({ expenses: 0, income: 0, balance: 0 })
 
 const selectedPeriod = ref('this_month')
@@ -201,6 +216,15 @@ const periodDescription = computed(() => {
     return `${fromDate.toLocaleDateString(locale.value, opts)} — ${toDate.toLocaleDateString(locale.value, opts)}`
 })
 
+const sortedRootByExpenses = computed(() => {
+    return [...rootCategories.value].filter(c => c.expenses > 0).sort((a, b) => b.expenses - a.expenses)
+})
+
+const maxRootExpense = computed(() => {
+    if (sortedRootByExpenses.value.length === 0) return 0
+    return sortedRootByExpenses.value[0]!.expenses
+})
+
 const sortedByExpenses = computed(() => {
     return [...categories.value].filter(c => c.expenses > 0).sort((a, b) => b.expenses - a.expenses)
 })
@@ -221,14 +245,16 @@ async function fetchReport() {
     loading.value = true
     const { from, to } = getDateRange(selectedPeriod.value)
     try {
-        const data = await $fetch<{ categories: CategoryReport[], totals: Totals }>('/api/reports/categories', {
+        const data = await $fetch<{ categories: CategoryReport[], rootCategories: CategoryReport[], totals: Totals }>('/api/reports/categories', {
             query: { from, to }
         })
         categories.value = data.categories
+        rootCategories.value = data.rootCategories
         totals.value = data.totals
     } catch (error) {
         console.error('Failed to fetch report:', error)
         categories.value = []
+        rootCategories.value = []
         totals.value = { expenses: 0, income: 0, balance: 0 }
     } finally {
         loading.value = false

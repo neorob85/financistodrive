@@ -44,6 +44,34 @@ export default defineEventHandler(async (event) => {
                 [result.userId, from, to]
             )
 
+            // Get expenses grouped by root category (parent_id IS NULL)
+            const rootRows = await conn.query(
+                `WITH RECURSIVE category_roots AS (
+                    SELECT id, id AS root_id, title AS root_title
+                    FROM categories
+                    WHERE parent_id IS NULL AND user_id = ?
+                    UNION ALL
+                    SELECT c.id, cr.root_id, cr.root_title
+                    FROM categories c
+                    INNER JOIN category_roots cr ON c.parent_id = cr.id
+                )
+                SELECT
+                    cr.root_id AS categoryId,
+                    cr.root_title AS categoryTitle,
+                    SUM(CASE WHEN t.amount_from < 0 THEN ABS(t.amount_from) ELSE 0 END) AS expenses,
+                    SUM(CASE WHEN t.amount_from > 0 THEN t.amount_from ELSE 0 END) AS income
+                FROM transactions t
+                INNER JOIN category_roots cr ON t.category_id = cr.id
+                WHERE t.user_id = ?
+                  AND t.is_transfer = 0
+                  AND t.transaction_date >= ?
+                  AND t.transaction_date < ?
+                  AND NOT EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id)
+                GROUP BY cr.root_id, cr.root_title
+                ORDER BY expenses DESC`,
+                [result.userId, result.userId, from, to]
+            )
+
             // Get totals
             const [totals] = await conn.query(
                 `SELECT
@@ -59,6 +87,13 @@ export default defineEventHandler(async (event) => {
             )
 
             return {
+                rootCategories: (rootRows as any[]).map((r: any) => ({
+                    categoryId: r.categoryId,
+                    categoryTitle: r.categoryTitle,
+                    expenses: parseFloat(r.expenses) || 0,
+                    income: parseFloat(r.income) || 0,
+                    balance: (parseFloat(r.income) || 0) - (parseFloat(r.expenses) || 0)
+                })),
                 categories: (rows as any[]).map((r: any) => ({
                     categoryId: r.categoryId,
                     categoryTitle: r.categoryTitle,

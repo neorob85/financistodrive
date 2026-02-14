@@ -603,6 +603,7 @@
     "income": "Entrate",
     "expenses": "Spese",
     "balance": "Saldo",
+    "expensesByRootCategory": "Spese per macro-categoria",
     "expensesByCategory": "Spese per categoria",
     "categoryDetails": "Dettaglio per categoria",
     "category": "Categoria",

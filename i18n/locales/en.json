@@ -603,6 +603,7 @@
     "income": "Income",
     "expenses": "Expenses",
     "balance": "Balance",
+    "expensesByRootCategory": "Expenses by group",
     "expensesByCategory": "Expenses by category",
     "categoryDetails": "Category details",
     "category": "Category",

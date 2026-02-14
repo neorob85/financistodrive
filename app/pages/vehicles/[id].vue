@@ -189,6 +189,14 @@
                             :y2="chartPadding.top + ((i - 1) / 3) * chartInnerHeight" stroke="var(--color-border)"
                             stroke-width="0.5" stroke-dasharray="4,4" />
 
+                        <!-- Y-axis labels -->
+                        <text v-for="(tick, i) in chartYTicks" :key="'ytick-' + i"
+                            :x="chartPadding.left - 6" :y="tick.y + 4"
+                            text-anchor="end" fill="var(--color-text-muted)"
+                            font-size="11" font-family="var(--font-sans)">
+                            {{ tick.label }}
+                        </text>
+
                         <!-- Area fill -->
                         <path :d="areaPath" fill="url(#consumptionGradient)" opacity="0.3" />
 
@@ -211,10 +219,6 @@
                             </linearGradient>
                         </defs>
                     </svg>
-                    <div class="chart-labels">
-                        <span class="chart-label-y top">{{ chartMaxVal.toFixed(1) }} km/L</span>
-                        <span class="chart-label-y bottom">{{ chartMinVal.toFixed(1) }} km/L</span>
-                    </div>
                     <div class="chart-x-labels">
                         <span v-for="label in chartXLabels" :key="label">{{ label }}</span>
                     </div>
@@ -496,7 +500,7 @@ const upcomingAlerts = computed(() => vehicleAlerts.value.filter(a => getAlertSt
 // Chart constants
 const chartWidth = 600
 const chartHeight = 200
-const chartPadding = { top: 15, right: 15, bottom: 5, left: 15 }
+const chartPadding = { top: 15, right: 15, bottom: 5, left: 50 }
 const chartInnerWidth = chartWidth - chartPadding.left - chartPadding.right
 const chartInnerHeight = chartHeight - chartPadding.top - chartPadding.bottom
 
@@ -556,6 +560,19 @@ const trendLine = computed(() => {
         x2: chartPadding.left + chartInnerWidth,
         y2: chartPadding.top + (1 - (y1 - chartMinVal.value) / range) * chartInnerHeight
     }
+})
+
+const chartYTicks = computed(() => {
+    const min = chartMinVal.value
+    const max = chartMaxVal.value
+    const range = max - min || 1
+    return [0, 1, 2, 3].map(i => {
+        const value = max - (i / 3) * range
+        return {
+            y: chartPadding.top + (i / 3) * chartInnerHeight,
+            label: value.toFixed(1)
+        }
+    })
 })
 
 const chartXLabels = computed(() => {
@@ -1080,33 +1097,6 @@ function createAutomotiveTransaction() {
 .consumption-chart {
     width: 100%;
     height: 180px;
-}
-
-.chart-labels {
-    position: absolute;
-    top: 0;
-    right: 8px;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    pointer-events: none;
-}
-
-.chart-label-y {
-    font-size: 0.65rem;
-    color: var(--color-text-muted);
-    background: var(--color-bg-card);
-    padding: 1px 4px;
-    border-radius: 3px;
-}
-
-.chart-label-y.top {
-    align-self: flex-end;
-}
-
-.chart-label-y.bottom {
-    align-self: flex-end;
 }
 
 .chart-x-labels {

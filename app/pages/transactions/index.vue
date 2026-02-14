@@ -20,7 +20,7 @@
           <label>{{ $t('transactions.category') }}</label>
           <select v-model="filterCategoryId" class="input-field">
             <option :value="null">{{ $t('transactions.filters.allCategories') }}</option>
-            <option v-for="cat in filterCategories" :key="cat.id" :value="cat.id">{{ cat.label }}</option>
+            <option v-for="cat in filterCategories" :key="cat.id" :value="cat.id">{{ cat.indent }}{{ cat.title }}</option>
           </select>
         </div>
         <div class="input-group">
@@ -149,12 +149,14 @@ interface FilterCategory {
   id: number
   title: string
   parentId: number | null
-  children?: FilterCategory[]
+  isActive: boolean
+  sortOrder?: number
 }
 
 interface FlatFilterCategory {
   id: number
-  label: string
+  title: string
+  indent: string
 }
 
 interface FilterProject {
@@ -297,15 +299,39 @@ function clearFilters() {
   filterDateTo.value = ''
 }
 
-function flattenCategories(categories: FilterCategory[], depth = 0): FlatFilterCategory[] {
+function flattenCategories(cats: FilterCategory[]): FlatFilterCategory[] {
   const result: FlatFilterCategory[] = []
-  for (const cat of categories) {
-    const prefix = depth > 0 ? '\u00A0\u00A0'.repeat(depth) + '\u2514\u2500 ' : ''
-    result.push({ id: cat.id, label: prefix + cat.title })
-    if (cat.children?.length) {
-      result.push(...flattenCategories(cat.children, depth + 1))
+
+  // Build tree from flat list using parentId
+  const categoryMap = new Map<number, FilterCategory & { children: (FilterCategory & { children: any[] })[] }>()
+  const rootCategories: (FilterCategory & { children: any[] })[] = []
+
+  for (const cat of cats) {
+    categoryMap.set(cat.id, { ...cat, children: [] })
+  }
+  for (const cat of cats) {
+    const catWithChildren = categoryMap.get(cat.id)!
+    if (cat.parentId && categoryMap.has(cat.parentId)) {
+      categoryMap.get(cat.parentId)!.children.push(catWithChildren)
+    } else {
+      rootCategories.push(catWithChildren)
     }
   }
+
+  // Flatten with visual indentation
+  function flatten(items: (FilterCategory & { children?: any[] })[], level = 0) {
+    for (const cat of items) {
+      if (cat.isActive !== false) {
+        const prefix = level > 0 ? '\u2514' + '\u2500'.repeat(level) + ' ' : ''
+        result.push({ id: cat.id, title: cat.title, indent: prefix })
+      }
+      if (cat.children && cat.children.length > 0) {
+        flatten(cat.children, level + 1)
+      }
+    }
+  }
+
+  flatten(rootCategories)
   return result
 }
 
