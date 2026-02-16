@@ -8,6 +8,7 @@ async function processCreditCardPayments() {
         const pool = await getPool()
         const now = new Date()
         const todayDay = now.getDate()
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
         // Get all active credit card accounts where today is the payment day
         const creditCards = await pool.query(
@@ -40,9 +41,9 @@ async function processCreditCardPayments() {
                      WHERE from_account_id = ?
                        AND to_account_id = ?
                        AND is_transfer = 1
-                       AND DATE(transaction_date) = CURDATE()
+                       AND DATE(transaction_date) = ?
                        AND title LIKE '%Pagamento carta%'`,
-                    [cc.account_credit_card, cc.id]
+                    [cc.account_credit_card, cc.id, todayStr]
                 )
 
                 if (existing && existing.length > 0) continue
@@ -108,7 +109,7 @@ async function processCreditCardPayments() {
                         (title, amount_from, amount_to, from_account_id, to_account_id,
                          category_id, currency_id, transaction_date,
                          notes, is_transfer, is_automotive, user_id)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, 1, 0, ?)`,
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)`,
                     [
                         `Pagamento carta ${cc.card_title}`,
                         -transferAmount,    // leaves source account
@@ -117,6 +118,7 @@ async function processCreditCardPayments() {
                         cc.id,
                         -3,                 // <TRANSFER> category
                         cc.currency_id,
+                        todayStr,           // uses JS-derived date
                         `Pagamento automatico periodo contabile precedente`,
                         cc.user_id
                     ]
