@@ -111,18 +111,17 @@
                     <span :class="{ 'amount-ok': splitBalanced, 'amount-error': !splitBalanced }">
                         {{ formatCurrency(totalSplitAmount) }} / {{ formatCurrency(form.amount) }}
                         <template v-if="splitBalanced">✓</template>
-                        <template v-else>({{ splitRemaining >= 0 ? '+' : '-' }}{{ formatCurrency(Math.abs(splitRemaining)) }})</template>
+                        <template v-else>({{ splitRemaining >= 0 ? '+' : '-' }}{{
+                            formatCurrency(Math.abs(splitRemaining)) }})</template>
                     </span>
                 </div>
 
                 <div v-for="(split, index) in splits" :key="index" class="split-item">
                     <div class="split-row">
                         <div class="split-type-toggle">
-                            <button type="button" class="split-type-btn"
-                                :class="{ active: split.type === 'category' }"
+                            <button type="button" class="split-type-btn" :class="{ active: split.type === 'category' }"
                                 @click="split.type = 'category'">Cat</button>
-                            <button type="button" class="split-type-btn"
-                                :class="{ active: split.type === 'transfer' }"
+                            <button type="button" class="split-type-btn" :class="{ active: split.type === 'transfer' }"
                                 @click="split.type = 'transfer'">Trasf</button>
                         </div>
 
@@ -221,6 +220,13 @@
                 <textarea id="notes" v-model="form.notes" class="input-field" rows="2"></textarea>
             </div>
 
+            <!-- Deductible Amount (only for expenses/income, not transfers) -->
+            <div v-if="transactionType !== 'transfer'" class="input-group">
+                <label for="deductibleAmount">{{ $t('transactions.deductibleAmount') }}</label>
+                <input id="deductibleAmount" v-model.number="form.deductibleAmount" type="number" inputmode="decimal"
+                    step="0.01" min="0" placeholder="0.00" class="input-field">
+            </div>
+
             <!-- Error message -->
             <div v-if="formError" class="form-error">{{ formError }}</div>
 
@@ -299,6 +305,7 @@ interface TransactionDetail {
     projectId: number | null
     payeeId: number | null
     notes: string | null
+    deductibleAmount: number | null
     isTransfer: boolean
     isAutomotive: boolean
     attachments: Attachment[]
@@ -349,7 +356,8 @@ const form = ref({
     categoryId: null as number | null,
     payeeId: null as number | null,
     projectId: null as number | null,
-    notes: ''
+    notes: '',
+    deductibleAmount: null as number | null
 })
 
 const flatCategories = computed(() => {
@@ -572,7 +580,8 @@ async function handleSubmit() {
             transactionDate: form.value.transactionDate,
             notes: form.value.notes,
             isTransfer,
-            currencyId: 1
+            currencyId: 1,
+            deductibleAmount: form.value.deductibleAmount || null
         }
 
         if (isSplit.value && splits.value.length > 0) {
@@ -646,6 +655,7 @@ async function loadData() {
         form.value.payeeId = tx.payeeId
         form.value.projectId = tx.projectId
         form.value.notes = tx.notes || ''
+        form.value.deductibleAmount = tx.deductibleAmount || null
 
         // Determine transaction type
         if (tx.isTransfer) {

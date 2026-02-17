@@ -101,18 +101,17 @@
                     <span :class="{ 'amount-ok': splitBalanced, 'amount-error': !splitBalanced }">
                         {{ formatCurrency(totalSplitAmount) }} / {{ formatCurrency(form.amount) }}
                         <template v-if="splitBalanced">✓</template>
-                        <template v-else>({{ splitRemaining >= 0 ? '+' : '-' }}{{ formatCurrency(Math.abs(splitRemaining)) }})</template>
+                        <template v-else>({{ splitRemaining >= 0 ? '+' : '-' }}{{
+                            formatCurrency(Math.abs(splitRemaining)) }})</template>
                     </span>
                 </div>
 
                 <div v-for="(split, index) in splits" :key="index" class="split-item">
                     <div class="split-row">
                         <div class="split-type-toggle">
-                            <button type="button" class="split-type-btn"
-                                :class="{ active: split.type === 'category' }"
+                            <button type="button" class="split-type-btn" :class="{ active: split.type === 'category' }"
                                 @click="split.type = 'category'">Cat</button>
-                            <button type="button" class="split-type-btn"
-                                :class="{ active: split.type === 'transfer' }"
+                            <button type="button" class="split-type-btn" :class="{ active: split.type === 'transfer' }"
                                 @click="split.type = 'transfer'">Trasf</button>
                         </div>
 
@@ -146,7 +145,8 @@
                 <label for="project">{{ $t('transactions.project') }}</label>
                 <select id="project" v-model="form.projectId" class="input-field">
                     <option :value="null">{{ $t('transactions.noProject') }}</option>
-                    <option v-for="p in projects.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}</option>
+                    <option v-for="p in projects.filter(p => p.isActive)" :key="p.id" :value="p.id">{{ p.title }}
+                    </option>
                 </select>
             </div>
 
@@ -163,6 +163,13 @@
             <div class="input-group">
                 <label for="notes">{{ $t('common.notes') }}</label>
                 <textarea id="notes" v-model="form.notes" class="input-field" rows="2"></textarea>
+            </div>
+
+            <!-- Deductible Amount (only for expenses/income, not transfers) -->
+            <div v-if="transactionType !== 'transfer'" class="input-group">
+                <label for="deductibleAmount">{{ $t('transactions.deductibleAmount') }}</label>
+                <input id="deductibleAmount" v-model.number="form.deductibleAmount" type="number" inputmode="decimal"
+                    step="0.01" min="0" placeholder="0.00" class="input-field">
             </div>
 
             <!-- Attachments -->
@@ -280,7 +287,8 @@ const form = ref({
     categoryId: null as number | null,
     payeeId: null as number | null,
     projectId: null as number | null,
-    notes: ''
+    notes: '',
+    deductibleAmount: null as number | null
 })
 
 const flatCategories = computed(() => {
@@ -438,7 +446,8 @@ async function handleSubmit() {
             transactionDate: form.value.transactionDate,
             notes: form.value.notes,
             isTransfer,
-            currencyId: 1
+            currencyId: 1,
+            deductibleAmount: form.value.deductibleAmount || null
         }
 
         if (isSplit.value && splits.value.length > 0) {

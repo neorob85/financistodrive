@@ -111,9 +111,9 @@ CREATE TABLE `categories` (
 
 -- Insert default categories
 INSERT INTO `categories` (`id`, `parent_id`, `title`, `sort_order`, `is_active`, `user_id`, `is_automotive`)
-VALUES (-1, NULL, '<SPLIT>', -1, 1, NULL, 0),
-       (-2, NULL, '<NO_CATEGORY>', -1, 1, NULL, 0),
-       (-3, NULL, '<TRANSFER>', -1, 1, NULL, 0);
+VALUES (-1, NULL, '🔀 <SPLIT>', -1, 1, NULL, 0),
+       (-2, NULL, '🚫 <NO_CATEGORY>', -1, 1, NULL, 0),
+       (-3, NULL, '↔️ <TRANSFER>', -1, 1, NULL, 0);
 
 -- ============================================================================
 -- TABLE: attributes (no dependencies)
@@ -250,6 +250,7 @@ CREATE TABLE `transactions` (
     `notes` TEXT DEFAULT NULL COMMENT 'Additional Notes',
     `is_transfer` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Is The Transaction A Transfer?',
     `is_automotive` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Is The Transaction An Automotive Transaction?',
+    `deductible_amount` DECIMAL(10,2) DEFAULT NULL COMMENT 'Deductible amount for tax purposes',
     CONSTRAINT `fk_transactions_currencies` FOREIGN KEY (`currency_id`) REFERENCES `currencies`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT `fk_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT `fk_transactions_categories` FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON UPDATE CASCADE ON DELETE SET NULL,

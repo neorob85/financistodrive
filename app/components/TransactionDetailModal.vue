@@ -103,6 +103,13 @@
                         <span class="label">{{ $t('transactions.type') }}</span>
                         <span class="value automotive">🚗 {{ $t('transactions.automotive') }}</span>
                     </div>
+
+                    <!-- Deductible Amount -->
+                    <div v-if="transaction.deductibleAmount" class="detail-row">
+                        <span class="label">{{ $t('transactions.deductibleAmount') }}</span>
+                        <span class="value">{{ transaction.currencySymbol }}{{ transaction.deductibleAmount.toFixed(2)
+                        }}</span>
+                    </div>
                 </div>
 
                 <!-- Automotive Fuel Details -->
@@ -183,7 +190,7 @@
                     <div class="maint-total">
                         <span class="label">{{ $t('common.total') }}</span>
                         <span class="value">€ {{transaction.maintenanceLogs.reduce((sum, it) => sum + (it.amount || 0),
-                            0).toFixed(2) }}</span>
+                            0).toFixed(2)}}</span>
                     </div>
                 </div>
 
@@ -257,6 +264,7 @@ interface TransactionDetail {
     currencyCode: string
     currencySymbol: string
     notes: string | null
+    deductibleAmount: number | null
     isTransfer: boolean
     isAutomotive: boolean
     parentId: number | null

@@ -155,6 +155,7 @@
     "fillFuelFields": "Fill at least 2 fields among Liters, Price/Liter and Total",
     "notFuelTransaction": "This is not a fuel transaction",
     "notMaintenanceTransaction": "This is not a maintenance transaction",
+    "deductibleAmount": "Deductible amount",
     "periods": {
       "future": "Future",
       "today": "Today",

@@ -174,6 +174,7 @@ export default defineEventHandler(async (event) => {
             currencyCode: data.row.currency_code,
             currencySymbol: data.row.currency_symbol,
             notes: data.row.notes,
+            deductibleAmount: data.row.deductible_amount ? parseFloat(data.row.deductible_amount) : null,
             isTransfer: !!data.row.is_transfer,
             isAutomotive: !!data.row.is_automotive,
             parentId: data.row.parent_id,

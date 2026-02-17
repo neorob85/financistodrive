@@ -155,6 +155,7 @@
     "fillFuelFields": "Compila almeno 2 campi tra Litri, Prezzo/Litro e Totale",
     "notFuelTransaction": "Questa non è una transazione rifornimento",
     "notMaintenanceTransaction": "Questa non è una transazione manutenzione",
+    "deductibleAmount": "Importo deducibile",
     "periods": {
       "future": "Futuro",
       "today": "Oggi",

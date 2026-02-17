@@ -20,7 +20,8 @@
           <label>{{ $t('transactions.category') }}</label>
           <select v-model="filterCategoryId" class="input-field">
             <option :value="null">{{ $t('transactions.filters.allCategories') }}</option>
-            <option v-for="cat in filterCategories" :key="cat.id" :value="cat.id">{{ cat.indent }}{{ cat.title }}</option>
+            <option v-for="cat in filterCategories" :key="cat.id" :value="cat.id">{{ cat.indent }}{{ cat.title }}
+            </option>
           </select>
         </div>
         <div class="input-group">
@@ -46,17 +47,15 @@
         </div>
         <div class="input-group">
           <label>{{ $t('transactions.filters.dateFrom') }}</label>
-          <input v-model="filterDateFrom"
-            :type="dateFromFocused || filterDateFrom ? 'date' : 'text'"
+          <input v-model="filterDateFrom" :type="dateFromFocused || filterDateFrom ? 'date' : 'text'"
             @focus="dateFromFocused = true" @blur="dateFromFocused = false"
             :placeholder="$t('transactions.filters.dateFrom')" class="input-field">
         </div>
         <div class="input-group">
           <label>{{ $t('transactions.filters.dateTo') }}</label>
-          <input v-model="filterDateTo"
-            :type="dateToFocused || filterDateTo ? 'date' : 'text'"
-            @focus="dateToFocused = true" @blur="dateToFocused = false"
-            :placeholder="$t('transactions.filters.dateTo')" class="input-field">
+          <input v-model="filterDateTo" :type="dateToFocused || filterDateTo ? 'date' : 'text'"
+            @focus="dateToFocused = true" @blur="dateToFocused = false" :placeholder="$t('transactions.filters.dateTo')"
+            class="input-field">
         </div>
       </div>
     </div>
@@ -206,6 +205,7 @@ interface TransactionDetail {
   currencyCode: string
   currencySymbol: string
   notes: string | null
+  deductibleAmount: number | null
   isTransfer: boolean
   isAutomotive: boolean
   parentId: number | null

@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
         notes,
         isTransfer,
         isAutomotive,
+        deductibleAmount,
         splits // Array of split items: { title, amountFrom, amountTo, categoryId, toAccountId, isTransfer }
     } = body
 
@@ -49,8 +50,8 @@ export default defineEventHandler(async (event) => {
             // Insert main transaction
             const insertResult = await conn.query(
                 `INSERT INTO transactions 
-       (title, amount_from, amount_to, from_account_id, to_account_id, category_id, payee_id, project_id, currency_id, transaction_date, notes, is_transfer, is_automotive, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (title, amount_from, amount_to, from_account_id, to_account_id, category_id, payee_id, project_id, currency_id, transaction_date, notes, is_transfer, is_automotive, deductible_amount, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     title,
                     amountFrom,
@@ -65,6 +66,7 @@ export default defineEventHandler(async (event) => {
                     notes || null,
                     isTransfer ? 1 : 0,
                     isAutomotive ? 1 : 0,
+                    deductibleAmount || null,
                     result.userId
                 ]
             )

@@ -32,6 +32,7 @@ export default defineEventHandler(async (event) => {
         notes,
         isTransfer,
         currencyId,
+        deductibleAmount,
         splits
     } = body
 
@@ -98,7 +99,8 @@ export default defineEventHandler(async (event) => {
                     transaction_date = ?,
                     notes = ?,
                     is_transfer = ?,
-                    currency_id = ?
+                    currency_id = ?,
+                    deductible_amount = ?
                  WHERE id = ? AND user_id = ?`,
                 [
                     title,
@@ -113,6 +115,7 @@ export default defineEventHandler(async (event) => {
                     notes,
                     isTransfer ? 1 : 0,
                     currencyId,
+                    deductibleAmount !== undefined ? (deductibleAmount || null) : null,
                     transactionId,
                     result.userId
                 ]
