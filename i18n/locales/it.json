@@ -608,7 +608,10 @@
     "expensesByCategory": "Spese per categoria",
     "categoryDetails": "Dettaglio per categoria",
     "category": "Categoria",
-    "total": "Totale"
+    "total": "Totale",
+    "deductibleByCategory": "Spese deducibili per categoria",
+    "deductibleAmount": "Importo deducibile",
+    "totalDeductible": "Totale deducibile"
   },
   "PeriodSeparator": {
     "transactions": "transazioni"

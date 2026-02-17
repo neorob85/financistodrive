@@ -86,6 +86,34 @@ export default defineEventHandler(async (event) => {
                 [result.userId, from, to]
             )
 
+            // Get deductible expenses grouped by category
+            const deductibleRows = await conn.query(
+                `SELECT
+                    COALESCE(c.id, 0) AS categoryId,
+                    COALESCE(c.title, 'Senza categoria') AS categoryTitle,
+                    SUM(t.deductible_amount) AS deductibleAmount
+                 FROM transactions t
+                 LEFT JOIN categories c ON t.category_id = c.id
+                 WHERE t.user_id = ?
+                   AND t.is_transfer = 0
+                   AND t.deductible_amount IS NOT NULL
+                   AND t.deductible_amount > 0
+                   AND t.transaction_date >= ?
+                   AND t.transaction_date < ?
+                   AND NOT EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id)
+                 GROUP BY COALESCE(c.id, 0), COALESCE(c.title, 'Senza categoria')
+                 ORDER BY deductibleAmount DESC`,
+                [result.userId, from, to]
+            )
+
+            const deductibleByCategory = (deductibleRows as any[]).map((r: any) => ({
+                categoryId: r.categoryId,
+                categoryTitle: r.categoryTitle,
+                deductibleAmount: parseFloat(r.deductibleAmount) || 0
+            }))
+
+            const deductibleTotal = deductibleByCategory.reduce((sum: number, r: any) => sum + r.deductibleAmount, 0)
+
             return {
                 rootCategories: (rootRows as any[]).map((r: any) => ({
                     categoryId: r.categoryId,
@@ -105,7 +133,9 @@ export default defineEventHandler(async (event) => {
                     expenses: parseFloat(totals?.totalExpenses) || 0,
                     income: parseFloat(totals?.totalIncome) || 0,
                     balance: (parseFloat(totals?.totalIncome) || 0) - (parseFloat(totals?.totalExpenses) || 0)
-                }
+                },
+                deductibleByCategory,
+                deductibleTotal
             }
         })
 

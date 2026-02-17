@@ -608,7 +608,10 @@
     "expensesByCategory": "Expenses by category",
     "categoryDetails": "Category details",
     "category": "Category",
-    "total": "Total"
+    "total": "Total",
+    "deductibleByCategory": "Deductible expenses by category",
+    "deductibleAmount": "Deductible amount",
+    "totalDeductible": "Total deductible"
   },
   "PeriodSeparator": {
     "transactions": "transactions"

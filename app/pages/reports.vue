@@ -118,6 +118,26 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Deductible expenses by category -->
+            <div v-if="deductibleTotal > 0" class="details-section glass-card">
+                <h3 class="section-title">🧾 {{ $t('reports.deductibleByCategory') }}</h3>
+                <div class="category-list">
+                    <div class="category-header deductible-header">
+                        <span class="cat-name">{{ $t('reports.category') }}</span>
+                        <span class="cat-amount">{{ $t('reports.deductibleAmount') }}</span>
+                    </div>
+                    <div v-for="dc in deductibleCategories" :key="'ded-' + dc.categoryId" class="category-row deductible-row">
+                        <span class="cat-name">{{ dc.categoryTitle }}</span>
+                        <span class="cat-amount deductible">€{{ formatAmount(dc.deductibleAmount) }}</span>
+                    </div>
+                    <!-- Total row -->
+                    <div class="category-row total-category-row">
+                        <span class="cat-name">{{ $t('reports.totalDeductible') }}</span>
+                        <span class="cat-amount deductible total-deductible">€{{ formatAmount(deductibleTotal) }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -137,6 +157,12 @@ interface CategoryReport {
     balance: number
 }
 
+interface DeductibleCategory {
+    categoryId: number
+    categoryTitle: string
+    deductibleAmount: number
+}
+
 interface Totals {
     expenses: number
     income: number
@@ -147,6 +173,8 @@ const loading = ref(true)
 const categories = ref<CategoryReport[]>([])
 const rootCategories = ref<CategoryReport[]>([])
 const totals = ref<Totals>({ expenses: 0, income: 0, balance: 0 })
+const deductibleCategories = ref<DeductibleCategory[]>([])
+const deductibleTotal = ref(0)
 
 const selectedPeriod = ref('this_month')
 const customFrom = ref('')
@@ -245,17 +273,21 @@ async function fetchReport() {
     loading.value = true
     const { from, to } = getDateRange(selectedPeriod.value)
     try {
-        const data = await $fetch<{ categories: CategoryReport[], rootCategories: CategoryReport[], totals: Totals }>('/api/reports/categories', {
+        const data = await $fetch<{ categories: CategoryReport[], rootCategories: CategoryReport[], totals: Totals, deductibleByCategory: DeductibleCategory[], deductibleTotal: number }>('/api/reports/categories', {
             query: { from, to }
         })
         categories.value = data.categories
         rootCategories.value = data.rootCategories
         totals.value = data.totals
+        deductibleCategories.value = data.deductibleByCategory
+        deductibleTotal.value = data.deductibleTotal
     } catch (error) {
         console.error('Failed to fetch report:', error)
         categories.value = []
         rootCategories.value = []
         totals.value = { expenses: 0, income: 0, balance: 0 }
+        deductibleCategories.value = []
+        deductibleTotal.value = 0
     } finally {
         loading.value = false
     }
@@ -564,6 +596,21 @@ onMounted(() => {
 }
 
 .total-category-row .cat-amount {
+    font-weight: 700;
+}
+
+/* Deductible section */
+.deductible-header,
+.deductible-row {
+    grid-template-columns: 1fr 120px;
+}
+
+.deductible {
+    color: var(--color-accent);
+}
+
+.total-deductible {
+    font-size: 1rem;
     font-weight: 700;
 }
 
