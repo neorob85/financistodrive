@@ -23,7 +23,8 @@ SELECT
   -- Automotive info
   COALESCE(fl.odometer, ml.odometer) as odometer,
   COALESCE(v_fuel.brand, v_maint.brand) as vehicleBrand,
-  COALESCE(v_fuel.model, v_maint.model) as vehicleModel
+  COALESCE(v_fuel.model, v_maint.model) as vehicleModel,
+  t.deductible_amount AS deductibleAmount
 FROM transactions t
 LEFT JOIN categories c ON t.category_id = c.id
 LEFT JOIN accounts a ON t.from_account_id = a.id

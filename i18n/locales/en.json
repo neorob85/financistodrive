@@ -173,7 +173,8 @@
       "allProjects": "All projects",
       "allVehicles": "All vehicles",
       "clearAll": "Clear filters",
-      "noResults": "No transactions match the filters"
+      "noResults": "No transactions match the filters",
+      "deductibleOnly": "Deductible only"
     }
   },
   "automotive": {

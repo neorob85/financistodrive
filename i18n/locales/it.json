@@ -173,7 +173,8 @@
       "allProjects": "Tutti i progetti",
       "allVehicles": "Tutti i veicoli",
       "clearAll": "Azzera filtri",
-      "noResults": "Nessuna transazione corrisponde ai filtri"
+      "noResults": "Nessuna transazione corrisponde ai filtri",
+      "deductibleOnly": "Solo deducibili"
     }
   },
   "automotive": {

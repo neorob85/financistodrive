@@ -57,6 +57,12 @@
             @focus="dateToFocused = true" @blur="dateToFocused = false" :placeholder="$t('transactions.filters.dateTo')"
             class="input-field">
         </div>
+        <div class="input-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="filterDeductibleOnly">
+            <span>{{ $t('transactions.filters.deductibleOnly') }}</span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -137,6 +143,7 @@ interface Transaction {
   balanceAmount: number
   vehicleName?: string | null
   odometer?: number | null
+  hasDeductible?: boolean
 }
 
 interface FilterAccount {
@@ -270,6 +277,7 @@ const filterProjectId = ref<number | null>(null)
 const filterVehicleId = ref<number | null>(null)
 const filterDateFrom = ref('')
 const filterDateTo = ref('')
+const filterDeductibleOnly = ref(false)
 const dateFromFocused = ref(false)
 const dateToFocused = ref(false)
 
@@ -287,6 +295,7 @@ const activeFilterCount = computed(() => {
   if (filterVehicleId.value !== null) count++
   if (filterDateFrom.value) count++
   if (filterDateTo.value) count++
+  if (filterDeductibleOnly.value) count++
   return count
 })
 
@@ -297,6 +306,7 @@ function clearFilters() {
   filterVehicleId.value = null
   filterDateFrom.value = ''
   filterDateTo.value = ''
+  filterDeductibleOnly.value = false
 }
 
 function flattenCategories(cats: FilterCategory[]): FlatFilterCategory[] {
@@ -370,6 +380,9 @@ const filteredTransactions = computed(() => {
       const txDate = parseLocalDate(tx.transactionDate)
       const to = new Date(filterDateTo.value + 'T23:59:59')
       if (txDate > to) return false
+    }
+    if (filterDeductibleOnly.value && !tx.hasDeductible) {
+      return false
     }
     return true
   })
@@ -700,6 +713,28 @@ function setupInfiniteScroll() {
 .filter-grid .input-field {
   padding: var(--space-sm) var(--space-md);
   font-size: 0.85rem;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: flex-end;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-sm) 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
 }
 
 .loading-state,
