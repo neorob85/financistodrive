@@ -34,6 +34,13 @@ export default defineEventHandler(async (event) => {
         const currentExpenses = currentMonthData?.expenses || 0
         const currentIncome = currentMonthData?.income || 0
 
+        // Previous month stats
+        const prevDate = new Date(now.getFullYear(), now.getMonth() - 1)
+        const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`
+        const prevMonthData = months.find((m: any) => m.month === prevMonth)
+        const prevExpenses = prevMonthData?.expenses || 0
+        const prevIncome = prevMonthData?.income || 0
+
         // Scheduled transactions for the current month
         const scheduledRows = await withConnection(async (conn) => {
             return await conn.query(
@@ -41,7 +48,7 @@ export default defineEventHandler(async (event) => {
                  FROM transaction_schedules
                  WHERE user_id = ?
                    AND is_active = 1
-                   AND is_transfer = 0
+                   AND category_id NOT IN (-1, -3)
                    AND DATE_FORMAT(next_transaction_date, '%Y-%m') = ?`,
                 [result.userId, currentMonth]
             )
@@ -53,6 +60,27 @@ export default defineEventHandler(async (event) => {
             const amount = Number(row.amount_from)
             if (amount > 0) scheduledIncome += amount
             else scheduledExpenses += Math.abs(amount)
+        }
+
+        // Scheduled transactions for the previous month (overdue/pending)
+        const prevScheduledRows = await withConnection(async (conn) => {
+            return await conn.query(
+                `SELECT amount_from
+                 FROM transaction_schedules
+                 WHERE user_id = ?
+                   AND is_active = 1
+                   AND category_id NOT IN (-1, -3)
+                   AND DATE_FORMAT(next_transaction_date, '%Y-%m') = ?`,
+                [result.userId, prevMonth]
+            )
+        })
+
+        let prevScheduledIncome = 0
+        let prevScheduledExpenses = 0
+        for (const row of prevScheduledRows as any[]) {
+            const amount = Number(row.amount_from)
+            if (amount > 0) prevScheduledIncome += amount
+            else prevScheduledExpenses += Math.abs(amount)
         }
 
         // Monthly averages (across all returned months)
@@ -68,6 +96,15 @@ export default defineEventHandler(async (event) => {
             scheduled: {
                 expenses: Math.round(scheduledExpenses * 100) / 100,
                 income: Math.round(scheduledIncome * 100) / 100
+            },
+            prevMonth: {
+                label: prevMonth,
+                expenses: prevExpenses,
+                income: prevIncome
+            },
+            prevScheduled: {
+                expenses: Math.round(prevScheduledExpenses * 100) / 100,
+                income: Math.round(prevScheduledIncome * 100) / 100
             },
             averages: {
                 expenses: Math.round(avgExpenses * 100) / 100,

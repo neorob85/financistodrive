@@ -67,6 +67,64 @@
         </div>
       </div>
 
+      <!-- Previous month cards -->
+      <div class="prev-month-section">
+        <h2 class="section-title">{{ $t('dashboard.prevMonthSection') }} ({{ formatMonthLabel(stats.prevMonth.label) }})</h2>
+        <div class="stats-grid">
+          <!-- Previous month expenses -->
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon expense-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+                  <polyline points="17 18 23 18 23 12" />
+                </svg>
+              </span>
+              <span class="stat-label">{{ $t('dashboard.prevMonthExpenses') }}</span>
+            </div>
+            <div class="stat-value expense">€ {{ formatAmount(stats.prevMonth.expenses) }}</div>
+            <div v-if="stats.prevScheduled.expenses > 0" class="stat-projected expense">
+              € {{ formatAmount(stats.prevMonth.expenses + stats.prevScheduled.expenses) }}
+              <span class="projected-label">{{ $t('dashboard.withScheduled') }}</span>
+            </div>
+          </div>
+
+          <!-- Previous month income -->
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon income-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                  <polyline points="17 6 23 6 23 12" />
+                </svg>
+              </span>
+              <span class="stat-label">{{ $t('dashboard.prevMonthIncome') }}</span>
+            </div>
+            <div class="stat-value income">€ {{ formatAmount(stats.prevMonth.income) }}</div>
+            <div v-if="stats.prevScheduled.income > 0" class="stat-projected income">
+              € {{ formatAmount(stats.prevMonth.income + stats.prevScheduled.income) }}
+              <span class="projected-label">{{ $t('dashboard.withScheduled') }}</span>
+            </div>
+          </div>
+
+          <!-- Previous month balance -->
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon" :class="stats.prevMonth.income >= stats.prevMonth.expenses ? 'income-icon' : 'expense-icon'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </span>
+              <span class="stat-label">{{ $t('dashboard.prevMonthBalance') }}</span>
+            </div>
+            <div class="stat-value" :class="stats.prevMonth.income >= stats.prevMonth.expenses ? 'income' : 'expense'">
+              € {{ formatAmount(stats.prevMonth.income - stats.prevMonth.expenses) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Chart card -->
       <div class="chart-card glass-card">
         <h2 class="chart-title">{{ $t('dashboard.monthlyTrend') }}</h2>
@@ -175,6 +233,8 @@ interface MonthData {
 interface DashboardStats {
   currentMonth: { expenses: number; income: number }
   scheduled: { expenses: number; income: number }
+  prevMonth: { label: string; expenses: number; income: number }
+  prevScheduled: { expenses: number; income: number }
   averages: { expenses: number; income: number }
   months: MonthData[]
 }
@@ -199,6 +259,8 @@ const loading = ref(true)
 const stats = ref<DashboardStats>({
   currentMonth: { expenses: 0, income: 0 },
   scheduled: { expenses: 0, income: 0 },
+  prevMonth: { label: '', expenses: 0, income: 0 },
+  prevScheduled: { expenses: 0, income: 0 },
   averages: { expenses: 0, income: 0 },
   months: []
 })
@@ -519,6 +581,11 @@ onMounted(async () => {
 
 .income-dot {
   background: var(--color-success);
+}
+
+/* Previous month section */
+.prev-month-section {
+  margin-bottom: var(--space-xl);
 }
 
 /* Vehicles section */

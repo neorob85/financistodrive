@@ -35,10 +35,9 @@ export default defineEventHandler(async (event) => {
                  FROM transactions t
                  LEFT JOIN categories c ON t.category_id = c.id
                  WHERE t.user_id = ?
-                   AND t.is_transfer = 0
+                   AND t.category_id NOT IN (-1, -3)
                    AND t.transaction_date >= ?
                    AND t.transaction_date < ?
-                   AND NOT EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id)
                  GROUP BY COALESCE(c.id, 0), COALESCE(c.title, 'Senza categoria')
                  ORDER BY expenses DESC`,
                 [result.userId, from, to]
@@ -63,10 +62,9 @@ export default defineEventHandler(async (event) => {
                 FROM transactions t
                 INNER JOIN category_roots cr ON t.category_id = cr.id
                 WHERE t.user_id = ?
-                  AND t.is_transfer = 0
+                  AND t.category_id NOT IN (-1, -3)
                   AND t.transaction_date >= ?
                   AND t.transaction_date < ?
-                  AND NOT EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id)
                 GROUP BY cr.root_id, cr.root_title
                 ORDER BY expenses DESC`,
                 [result.userId, result.userId, from, to]
@@ -79,10 +77,9 @@ export default defineEventHandler(async (event) => {
                     SUM(CASE WHEN t.amount_from > 0 THEN t.amount_from ELSE 0 END) AS totalIncome
                  FROM transactions t
                  WHERE t.user_id = ?
-                   AND t.is_transfer = 0
+                   AND t.category_id NOT IN (-1, -3)
                    AND t.transaction_date >= ?
-                   AND t.transaction_date < ?
-                   AND NOT EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id)`,
+                   AND t.transaction_date < ?`,
                 [result.userId, from, to]
             )
 
@@ -95,12 +92,11 @@ export default defineEventHandler(async (event) => {
                  FROM transactions t
                  LEFT JOIN categories c ON t.category_id = c.id
                  WHERE t.user_id = ?
-                   AND t.is_transfer = 0
+                   AND t.category_id NOT IN (-1, -3)
                    AND t.deductible_amount IS NOT NULL
                    AND t.deductible_amount > 0
                    AND t.transaction_date >= ?
                    AND t.transaction_date < ?
-                   AND NOT EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id)
                  GROUP BY COALESCE(c.id, 0), COALESCE(c.title, 'Senza categoria')
                  ORDER BY deductibleAmount DESC`,
                 [result.userId, from, to]

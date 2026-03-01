@@ -225,7 +225,10 @@ function getDateRange(period: string): { from: string, to: string } {
 }
 
 function formatDate(d: Date): string {
-    return d.toISOString().split('T')[0] || ''
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
 }
 
 function formatAmount(n: number): string {
@@ -237,8 +240,13 @@ function formatAmount(n: number): string {
 
 const periodDescription = computed(() => {
     const { from, to } = getDateRange(selectedPeriod.value)
-    const fromDate = new Date(from)
-    const toDate = new Date(to)
+    // Parse date strings as local time (splitting avoids UTC interpretation)
+    const parseLocal = (s: string) => {
+        const [y, m, d] = s.split('-').map(Number)
+        return new Date(y!, m! - 1, d!)
+    }
+    const fromDate = parseLocal(from)
+    const toDate = parseLocal(to)
     toDate.setDate(toDate.getDate() - 1) // show inclusive end
     const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
     return `${fromDate.toLocaleDateString(locale.value, opts)} — ${toDate.toLocaleDateString(locale.value, opts)}`

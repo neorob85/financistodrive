@@ -71,7 +71,11 @@
     "runningCostPerKm": "Costo/km (gestione)",
     "totalCostPerKm": "Costo/km (totale)",
     "overdueMaintenances": "{count} manutenzioni scadute",
-    "upcomingMaintenances": "{count} manutenzioni in scadenza"
+    "upcomingMaintenances": "{count} manutenzioni in scadenza",
+    "prevMonthExpenses": "Spese mese precedente",
+    "prevMonthIncome": "Entrate mese precedente",
+    "prevMonthBalance": "Saldo mese precedente",
+    "prevMonthSection": "Mese precedente"
   },
   "accounts": {
     "title": "I tuoi Conti",

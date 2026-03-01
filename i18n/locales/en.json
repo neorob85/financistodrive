@@ -71,7 +71,11 @@
     "runningCostPerKm": "Cost/km (running)",
     "totalCostPerKm": "Cost/km (total)",
     "overdueMaintenances": "{count} overdue maintenance",
-    "upcomingMaintenances": "{count} upcoming maintenance"
+    "upcomingMaintenances": "{count} upcoming maintenance",
+    "prevMonthExpenses": "Previous Month Expenses",
+    "prevMonthIncome": "Previous Month Income",
+    "prevMonthBalance": "Previous Month Balance",
+    "prevMonthSection": "Previous Month"
   },
   "accounts": {
     "title": "Your Accounts",
