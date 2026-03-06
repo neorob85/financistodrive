@@ -27,7 +27,12 @@ export async function getPool(): Promise<mariadb.Pool> {
         // Mantieni almeno 1 connessione attiva per evitare cold starts
         minimumIdle: 1,
         // Timeout per connessioni che non vengono restituite al pool
-        leakDetectionTimeout: 60000
+        leakDetectionTimeout: 60000,
+        // Mantieni vive le connessioni TCP (evita che firewall/iOS chiuda connessioni idle)
+        socketKeepAlive: true,
+        // Valida la connessione prima di restituirla dal pool se è idle da >500ms
+        // Evita errori su connessioni stantie dopo sospensione iOS
+        minDelayValidation: 500
     })
 
     return pool

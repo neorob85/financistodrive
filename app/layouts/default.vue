@@ -17,23 +17,15 @@ interface User {
   isAdmin: boolean
 }
 
-const user = ref<User | null>(null)
+// Legge l'utente già caricato dal middleware (evita chiamata duplicata a /api/auth/me)
+const user = useState<User | null>('current-user', () => null)
 const { loadLanguage } = useLanguage()
 const { loadTheme } = useTheme()
 
-// Fetch user info and language on mount
 onMounted(async () => {
-  try {
-    const result = await $fetch<{ authenticated: boolean; user?: User }>('/api/auth/me')
-    if (result.authenticated && result.user) {
-      user.value = result.user
-      // Load user's preferred language
-      await loadLanguage()
-      // Load user's preferred theme
-      await loadTheme()
-    }
-  } catch {
-    // User info not available
+  if (user.value) {
+    // Carica lingua e tema in parallelo
+    await Promise.all([loadLanguage(), loadTheme()])
   }
 })
 </script>
