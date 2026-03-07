@@ -296,7 +296,26 @@ function formatMonthLabel(monthStr: string): string {
   return date.toLocaleDateString(locale.value, { month: 'short' }).replace('.', '')
 }
 
+const CACHE_KEY = 'dashboard-cache-v1'
+const CACHE_MAX_AGE = 10 * 60 * 1000 // 10 minuti
+
 onMounted(async () => {
+  // Mostra subito i dati cachati (stale-while-revalidate)
+  const cached = localStorage.getItem(CACHE_KEY)
+  if (cached) {
+    try {
+      const { data, ts } = JSON.parse(cached)
+      if (Date.now() - ts < CACHE_MAX_AGE) {
+        stats.value = data.stats
+        vehicles.value = data.vehicles
+        loading.value = false
+      }
+    } catch {
+      localStorage.removeItem(CACHE_KEY)
+    }
+  }
+
+  // Aggiorna sempre i dati freschi in background
   try {
     const [statsData, vehiclesData] = await Promise.all([
       $fetch<DashboardStats>('/api/dashboard/stats'),
@@ -304,6 +323,10 @@ onMounted(async () => {
     ])
     stats.value = statsData
     vehicles.value = vehiclesData.vehicles
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      data: { stats: statsData, vehicles: vehiclesData.vehicles },
+      ts: Date.now()
+    }))
   } catch (error) {
     console.error('Failed to load dashboard:', error)
   } finally {

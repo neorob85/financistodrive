@@ -20,17 +20,24 @@ export function useTheme() {
         }
     }
 
-    // Load theme from API
+    // Load theme from API (con fallback immediato da localStorage)
     async function loadTheme() {
+        // Applica subito il tema cachato per evitare flash visivo
+        const cached = localStorage.getItem('app-theme')
+        if (cached) {
+            theme.value = cached
+            applyTheme(cached)
+        }
+
         try {
             const data = await $fetch<{ theme: string }>('/api/users/theme')
             if (data.theme) {
                 theme.value = data.theme
                 applyTheme(theme.value)
+                localStorage.setItem('app-theme', data.theme)
             }
         } catch {
-            // Default to system if error or unauthenticated
-            applyTheme('system')
+            applyTheme(cached ?? 'system')
         }
     }
 
@@ -46,6 +53,7 @@ export function useTheme() {
             })
             theme.value = newTheme
             applyTheme(newTheme)
+            localStorage.setItem('app-theme', newTheme)
             return true
         } catch (e: any) {
             error.value = e.data?.message || 'Error saving theme'
