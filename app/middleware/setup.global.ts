@@ -4,6 +4,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return
     }
 
+    // Su client, se l'utente è già in stato (navigazione intra-app), salta le API call
+    if (import.meta.client) {
+        const currentUser = useState('current-user', () => null)
+        if (currentUser.value) {
+            return
+        }
+    }
+
     // Get cookies for SSR - forward browser cookies to API during server-side rendering
     const headers = import.meta.server ? useRequestHeaders(['cookie']) : {}
 
