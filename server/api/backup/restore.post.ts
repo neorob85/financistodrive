@@ -24,6 +24,11 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: 'No ZIP file provided' })
     }
 
+    const MAX_RESTORE_SIZE = 500 * 1024 * 1024 // 500 MB
+    if (zipFile.data.length > MAX_RESTORE_SIZE) {
+        throw createError({ statusCode: 413, message: 'File di backup troppo grande (max 500 MB)' })
+    }
+
     const tempDir = join(process.cwd(), 'server', 'data', `restore_${userId}_${Date.now()}`)
 
     try {

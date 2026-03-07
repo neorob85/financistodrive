@@ -4,6 +4,12 @@ import { readFile, rm, mkdir, readdir, copyFile } from 'fs/promises'
 import { join } from 'path'
 
 export default defineEventHandler(async (event) => {
+    // Require setup token
+    const token = getHeader(event, 'x-setup-token')
+    if (!validateSetupToken(token)) {
+        throw createError({ statusCode: 401, message: 'Setup token non valido o assente' })
+    }
+
     const config = await getDbConfig()
     if (!config) {
         throw createError({ statusCode: 400, message: 'Database not configured' })
@@ -36,6 +42,11 @@ export default defineEventHandler(async (event) => {
     const zipFile = formData?.find(f => f.filename?.endsWith('.zip'))
     if (!zipFile || !zipFile.data) {
         throw createError({ statusCode: 400, message: 'No ZIP file provided' })
+    }
+
+    const MAX_RESTORE_SIZE = 500 * 1024 * 1024 // 500 MB
+    if (zipFile.data.length > MAX_RESTORE_SIZE) {
+        throw createError({ statusCode: 413, message: 'File di backup troppo grande (max 500 MB)' })
     }
 
     const tempDir = join(process.cwd(), 'server', 'data', `setup_restore_${Date.now()}`)

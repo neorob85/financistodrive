@@ -6,6 +6,12 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 403, message: 'Setup già completato' })
     }
 
+    // Require setup token (generated at server startup and printed to console)
+    const token = getHeader(event, 'x-setup-token')
+    if (!validateSetupToken(token)) {
+        throw createError({ statusCode: 401, message: 'Setup token non valido o assente' })
+    }
+
     const body = await readBody(event)
 
     const { host, port, user, password } = body

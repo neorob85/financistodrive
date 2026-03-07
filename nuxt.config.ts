@@ -69,7 +69,23 @@ export default defineNuxtConfig({
         'X-Content-Type-Options': 'nosniff',
         'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+        // HSTS: force HTTPS for 1 year (only effective behind a TLS reverse proxy)
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        // CSP: conservative policy compatible with Nuxt SSR + PWA + service workers
+        'Content-Security-Policy': [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob:",
+          "font-src 'self' data:",
+          "connect-src 'self'",
+          "media-src 'self'",
+          "worker-src 'self' blob:",
+          "frame-ancestors 'none'",
+          "base-uri 'self'",
+          "form-action 'self'"
+        ].join('; ')
       }
     }
   },

@@ -14,7 +14,20 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    // Rate limit per username
+    // Rate limit per IP (max 20 tentativi / 15 min — blocca enumerazione username)
+    const ip = getHeader(event, 'x-forwarded-for')?.split(',')[0].trim()
+        || getHeader(event, 'x-real-ip')
+        || 'unknown'
+    const ipKey = `login-ip:${ip}`
+    const ipCheck = checkRateLimit(ipKey, 20)
+    if (!ipCheck.allowed) {
+        throw createError({
+            statusCode: 429,
+            message: `Troppi tentativi. Riprova tra ${ipCheck.retryAfter} secondi.`
+        })
+    }
+
+    // Rate limit per username (max 5 tentativi / 15 min)
     const rateLimitKey = `login:${String(username).toLowerCase()}`
     const rateCheck = checkRateLimit(rateLimitKey)
     if (!rateCheck.allowed) {
@@ -53,6 +66,7 @@ export default defineEventHandler(async (event) => {
             const passwordValid = await bcrypt.compare(password, foundUser.password)
             if (!passwordValid) {
                 recordFailedAttempt(rateLimitKey)
+                recordFailedAttempt(ipKey, 20)
                 throw createError({
                     statusCode: 401,
                     message: 'Credenziali non valide'
@@ -69,17 +83,12 @@ export default defineEventHandler(async (event) => {
         const token = createToken(user.id)
         const cookieConfig = getCookieConfig()
 
-        // Login successful — clear rate limit counter
+        // Login successful: clear rate limit counters
         clearRateLimit(rateLimitKey)
+        clearRateLimit(ipKey)
 
-        // Set cookie with 30 days expiration
-        setCookie(event, cookieConfig.name, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: cookieConfig.maxAge,
-            path: '/'
-        })
+        const { name, maxAge, httpOnly, secure, sameSite, path } = cookieConfig
+        setCookie(event, name, token, { httpOnly, secure, sameSite, maxAge, path })
 
         return {
             success: true,

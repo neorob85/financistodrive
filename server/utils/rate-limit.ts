@@ -1,4 +1,3 @@
-const MAX_ATTEMPTS = 5
 const WINDOW_MS = 15 * 60 * 1000  // 15 minutes
 const BLOCK_MS = 15 * 60 * 1000   // block for 15 minutes
 
@@ -10,7 +9,7 @@ interface Entry {
 
 const store = new Map<string, Entry>()
 
-export function checkRateLimit(key: string): { allowed: boolean; retryAfter?: number } {
+export function checkRateLimit(key: string, maxAttempts = 5): { allowed: boolean; retryAfter?: number } {
     const now = Date.now()
     const entry = store.get(key)
 
@@ -27,7 +26,7 @@ export function checkRateLimit(key: string): { allowed: boolean; retryAfter?: nu
     return { allowed: true }
 }
 
-export function recordFailedAttempt(key: string): void {
+export function recordFailedAttempt(key: string, maxAttempts = 5): void {
     const now = Date.now()
     const entry = store.get(key)
 
@@ -37,7 +36,7 @@ export function recordFailedAttempt(key: string): void {
     }
 
     entry.count++
-    if (entry.count >= MAX_ATTEMPTS) {
+    if (entry.count >= maxAttempts) {
         entry.blockedUntil = now + BLOCK_MS
     }
     store.set(key, entry)

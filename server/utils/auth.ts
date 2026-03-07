@@ -102,12 +102,19 @@ export function validateToken(token: string): { valid: boolean; userId?: number 
 }
 
 /**
- * Get cookie configuration
+ * Get cookie configuration.
+ * secure is always true unless explicitly disabled via COOKIE_SECURE=false.
+ * Behind a reverse proxy with TLS termination, this should always be true.
  */
 export function getCookieConfig() {
+    const secure = process.env.COOKIE_SECURE !== 'false'
     return {
         name: COOKIE_NAME,
-        maxAge: 60 * 60 * 24 * COOKIE_MAX_AGE_DAYS // 90 days in seconds
+        maxAge: 60 * 60 * 24 * COOKIE_MAX_AGE_DAYS,
+        httpOnly: true,
+        secure,
+        sameSite: 'lax' as const,
+        path: '/'
     }
 }
 
