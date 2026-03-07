@@ -22,8 +22,8 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Username e password sono obbligatori' })
         }
 
-        if (password.length < 6) {
-            throw createError({ statusCode: 400, message: 'La password deve avere almeno 6 caratteri' })
+        if (password.length < 8) {
+            throw createError({ statusCode: 400, message: 'La password deve avere almeno 8 caratteri' })
         }
 
         const hash = await bcrypt.hash(password, 10)

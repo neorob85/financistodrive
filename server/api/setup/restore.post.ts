@@ -2,9 +2,6 @@ import mariadb from 'mariadb'
 import { existsSync } from 'fs'
 import { readFile, rm, mkdir, readdir, copyFile } from 'fs/promises'
 import { join } from 'path'
-import unzipper from 'unzipper'
-import { Readable } from 'stream'
-import { pipeline } from 'stream/promises'
 
 export default defineEventHandler(async (event) => {
     const config = await getDbConfig()
@@ -44,10 +41,8 @@ export default defineEventHandler(async (event) => {
     const tempDir = join(process.cwd(), 'server', 'data', `setup_restore_${Date.now()}`)
 
     try {
-        // Extract ZIP
-        await mkdir(tempDir, { recursive: true })
-        const stream = Readable.from(zipFile.data)
-        await pipeline(stream, unzipper.Extract({ path: tempDir }))
+        // Extract ZIP (safe extraction prevents Zip Slip)
+        await extractZipSafe(zipFile.data, tempDir)
 
         // Validate: database.sql must exist
         const sqlPath = join(tempDir, 'database.sql')
@@ -99,7 +94,7 @@ export default defineEventHandler(async (event) => {
     } catch (error: any) {
         await resetPool().catch(() => { })
         if (error.statusCode) throw error
-        throw createError({ statusCode: 500, message: error.message })
+        throw createError({ statusCode: 500, message: safeErrorMessage(error) })
     } finally {
         if (existsSync(tempDir)) {
             await rm(tempDir, { recursive: true }).catch(() => { })

@@ -4,9 +4,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from '
 import { join, dirname } from 'path'
 
 // JWT configuration
-const JWT_EXPIRATION = '90d' // 3 months
+const JWT_EXPIRATION = '30d'
 const COOKIE_NAME = 'sm_token'
-const COOKIE_MAX_AGE_DAYS = 90
+const COOKIE_MAX_AGE_DAYS = 30
 const SECRET_FILE = join(process.cwd(), 'server', 'data', 'jwt.secret')
 
 interface JWTPayload {

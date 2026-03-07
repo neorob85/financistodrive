@@ -1,6 +1,11 @@
 // testConnection is auto-imported from server/utils/db.ts
 
 export default defineEventHandler(async (event) => {
+    // Block this endpoint once setup is complete (prevents SSRF)
+    if (await isDbConfigured()) {
+        throw createError({ statusCode: 403, message: 'Setup già completato' })
+    }
+
     const body = await readBody(event)
 
     const { host, port, user, password } = body

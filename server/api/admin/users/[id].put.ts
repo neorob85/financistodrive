@@ -30,8 +30,8 @@ export default defineEventHandler(async (event) => {
         // Hash password outside withConnection if provided
         let hash: string | null = null
         if (password) {
-            if (password.length < 6) {
-                throw createError({ statusCode: 400, message: 'La password deve avere almeno 6 caratteri' })
+            if (password.length < 8) {
+                throw createError({ statusCode: 400, message: 'La password deve avere almeno 8 caratteri' })
             }
             hash = await bcrypt.hash(password, 10)
         }

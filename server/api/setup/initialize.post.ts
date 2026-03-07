@@ -11,6 +11,11 @@ interface DbConfigType {
 }
 
 export default defineEventHandler(async (event) => {
+    // Block this endpoint once setup is complete (prevents SSRF)
+    if (await isDbConfigured()) {
+        throw createError({ statusCode: 403, message: 'Setup già completato' })
+    }
+
     const body = await readBody(event)
 
     const { host, port, user, password } = body
@@ -61,7 +66,7 @@ export default defineEventHandler(async (event) => {
     } catch (error: any) {
         throw createError({
             statusCode: 500,
-            message: error.message || 'Failed to initialize database'
+            message: safeErrorMessage(error, 'Inizializzazione database fallita')
         })
     } finally {
         if (conn) await conn.end()

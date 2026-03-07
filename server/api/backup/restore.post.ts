@@ -1,9 +1,6 @@
 import { existsSync } from 'fs'
 import { readFile, rm, mkdir, copyFile, readdir } from 'fs/promises'
 import { join } from 'path'
-import unzipper from 'unzipper'
-import { Readable } from 'stream'
-import { pipeline } from 'stream/promises'
 import { withConnection } from '../../utils/db'
 
 export default defineEventHandler(async (event) => {
@@ -30,10 +27,8 @@ export default defineEventHandler(async (event) => {
     const tempDir = join(process.cwd(), 'server', 'data', `restore_${userId}_${Date.now()}`)
 
     try {
-        // Extract ZIP to temp directory
-        await mkdir(tempDir, { recursive: true })
-        const stream = Readable.from(zipFile.data)
-        await pipeline(stream, unzipper.Extract({ path: tempDir }))
+        // Extract ZIP to temp directory (safe extraction prevents Zip Slip)
+        await extractZipSafe(zipFile.data, tempDir)
 
         // Read and validate data.json
         const dataJsonPath = join(tempDir, 'data.json')

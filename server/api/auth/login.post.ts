@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import { withConnection } from '../../utils/db'
+import { checkRateLimit, recordFailedAttempt, clearRateLimit } from '../../utils/rate-limit'
+import { safeErrorMessage } from '../../utils/errors'
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
@@ -9,6 +11,16 @@ export default defineEventHandler(async (event) => {
         throw createError({
             statusCode: 400,
             message: 'Username e password sono richiesti'
+        })
+    }
+
+    // Rate limit per username
+    const rateLimitKey = `login:${String(username).toLowerCase()}`
+    const rateCheck = checkRateLimit(rateLimitKey)
+    if (!rateCheck.allowed) {
+        throw createError({
+            statusCode: 429,
+            message: `Troppi tentativi. Riprova tra ${rateCheck.retryAfter} secondi.`
         })
     }
 
@@ -40,6 +52,7 @@ export default defineEventHandler(async (event) => {
             // Verify password
             const passwordValid = await bcrypt.compare(password, foundUser.password)
             if (!passwordValid) {
+                recordFailedAttempt(rateLimitKey)
                 throw createError({
                     statusCode: 401,
                     message: 'Credenziali non valide'
@@ -56,7 +69,10 @@ export default defineEventHandler(async (event) => {
         const token = createToken(user.id)
         const cookieConfig = getCookieConfig()
 
-        // Set cookie with 90 days expiration
+        // Login successful — clear rate limit counter
+        clearRateLimit(rateLimitKey)
+
+        // Set cookie with 30 days expiration
         setCookie(event, cookieConfig.name, token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -77,7 +93,7 @@ export default defineEventHandler(async (event) => {
 
         throw createError({
             statusCode: 500,
-            message: error.message || 'Errore durante il login'
+            message: safeErrorMessage(error, 'Errore durante il login')
         })
     }
 })

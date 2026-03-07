@@ -62,6 +62,17 @@ export default defineNuxtConfig({
     strategy: 'no_prefix',
     detectBrowserLanguage: false
   },
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Frame-Options': 'DENY',
+        'X-Content-Type-Options': 'nosniff',
+        'X-XSS-Protection': '1; mode=block',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+      }
+    }
+  },
   vite: {
     server: {
       allowedHosts: process.env.ALLOWED_HOST ? [process.env.ALLOWED_HOST] : true

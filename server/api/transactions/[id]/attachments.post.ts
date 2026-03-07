@@ -28,6 +28,17 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: 'Nessun file caricato' })
         }
 
+        // Verify the transaction belongs to the authenticated user (IDOR prevention)
+        await withConnection(async (conn) => {
+            const [tx] = await conn.query(
+                'SELECT id FROM transactions WHERE id = ? AND user_id = ?',
+                [transactionId, result.userId]
+            )
+            if (!tx) {
+                throw createError({ statusCode: 404, message: 'Transazione non trovata' })
+            }
+        })
+
         const uploadedFiles: string[] = []
 
         // Create uploads directory: /uploads/attachments/{userId}/{transactionId}/
@@ -36,11 +47,28 @@ export default defineEventHandler(async (event) => {
             await mkdir(uploadsDir, { recursive: true })
         }
 
+        const ALLOWED_EXTENSIONS = new Set([
+            'jpg', 'jpeg', 'png', 'gif', 'webp',
+            'pdf', 'doc', 'docx', 'xls', 'xlsx',
+            'txt', 'csv', 'zip', 'heic', 'tiff'
+        ])
+        const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MB
+
         for (const file of formData) {
             if (file.filename && file.data) {
-                // Generate unique filename
+                // Validate file size
+                if (file.data.length > MAX_FILE_SIZE) {
+                    throw createError({ statusCode: 413, message: `File troppo grande: ${file.filename} (max 20 MB)` })
+                }
+
+                // Validate extension against whitelist
+                const ext = (file.filename.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+                if (!ext || !ALLOWED_EXTENSIONS.has(ext)) {
+                    throw createError({ statusCode: 415, message: `Tipo di file non consentito: .${ext || '?'}` })
+                }
+
+                // Generate unique filename using only the sanitized extension
                 const timestamp = Date.now()
-                const ext = file.filename.split('.').pop() || 'bin'
                 const filename = `${timestamp}.${ext}`
                 const filePath = join(uploadsDir, filename)
 

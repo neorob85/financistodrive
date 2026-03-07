@@ -21,8 +21,8 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: 'Password attuale e nuova sono richieste' })
     }
 
-    if (newPassword.length < 6) {
-        throw createError({ statusCode: 400, message: 'La nuova password deve avere almeno 6 caratteri' })
+    if (newPassword.length < 8) {
+        throw createError({ statusCode: 400, message: 'La nuova password deve avere almeno 8 caratteri' })
     }
 
     try {
