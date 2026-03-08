@@ -92,6 +92,33 @@
                 </select>
             </div>
 
+            <!-- Category Attributes -->
+            <template v-if="transactionType !== 'transfer' && !isSplit && activeCategoryAttributes.length > 0">
+                <div class="attributes-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    {{ $t('transactions.categoryAttributes') }}
+                </div>
+                <div v-for="attr in activeCategoryAttributes" :key="attr.id" class="input-group">
+                    <label>
+                        {{ attr.title }}<span v-if="attr.unit" class="attr-unit-label"> ({{ attr.unit }})</span><span v-if="attr.isRequired" class="required-star"> *</span>
+                    </label>
+                    <input v-if="attr.type === 'TEXT'" v-model="attributeValues[attr.id]" type="text" class="input-field" :required="attr.isRequired" />
+                    <input v-else-if="attr.type === 'NUMBER'" v-model="attributeValues[attr.id]" type="number" inputmode="decimal" step="any" class="input-field" :required="attr.isRequired" />
+                    <label v-else-if="attr.type === 'BOOLEAN'" class="checkbox-label">
+                        <input type="checkbox" :checked="attributeValues[attr.id] === '1'" @change="(e: Event) => { attributeValues[attr.id] = (e.target as HTMLInputElement).checked ? '1' : '0' }" />
+                        <span>{{ $t('categoryAttributes.types.BOOLEAN') }}</span>
+                    </label>
+                    <input v-else-if="attr.type === 'DATE'" v-model="attributeValues[attr.id]" type="date" class="input-field" :required="attr.isRequired" />
+                    <select v-else-if="attr.type === 'LIST'" v-model="attributeValues[attr.id]" class="input-field" :required="attr.isRequired">
+                        <option value="">{{ $t('common.select') }}</option>
+                        <option v-for="val in parseListValues(attr.listValues)" :key="val" :value="val">{{ val }}</option>
+                    </select>
+                </div>
+            </template>
+
             <!-- To Account (for transfers) -->
             <div v-if="transactionType === 'transfer'" class="input-group">
                 <label for="toAccount">{{ $t('transactions.destinationAccount') }} *</label>
@@ -293,6 +320,17 @@ interface SplitItem {
     notes: string
 }
 
+interface CategoryAttribute {
+    id: number
+    categoryId: number
+    title: string
+    type: 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'LIST'
+    listValues: string | null
+    defaultValue: string | null
+    unit: string | null
+    isRequired: boolean
+}
+
 interface TransactionDetail {
     id: number
     title: string
@@ -329,6 +367,8 @@ const accounts = ref<Account[]>([])
 const categories = ref<Category[]>([])
 const payees = ref<Payee[]>([])
 const projects = ref<Project[]>([])
+const categoryAttributes = ref<CategoryAttribute[]>([])
+const attributeValues = ref<Record<number, string>>({})
 
 const loading = ref(true)
 const loadError = ref('')
@@ -425,6 +465,37 @@ const splitBalanced = computed(() => {
 const splitRemaining = computed(() => {
     return totalSplitAmount.value - (form.value.amount || 0)
 })
+
+const activeCategoryAttributes = computed(() => {
+    if (!form.value.categoryId || form.value.categoryId <= 0) return []
+    return categoryAttributes.value.filter(a => a.categoryId === form.value.categoryId)
+})
+
+function parseListValues(raw: string | null): string[] {
+    if (!raw) return []
+    try { return JSON.parse(raw) } catch { return [] }
+}
+
+watch(() => form.value.categoryId, (newCatId) => {
+    attributeValues.value = {}
+    if (newCatId && newCatId > 0) {
+        for (const attr of categoryAttributes.value.filter(a => a.categoryId === newCatId)) {
+            attributeValues.value[attr.id] = attr.defaultValue ?? (attr.type === 'BOOLEAN' ? '0' : '')
+        }
+    }
+}, { flush: 'sync' })
+
+async function saveAttributeValues(transactionId: number) {
+    const attrs = activeCategoryAttributes.value
+    if (attrs.length === 0) return
+    const values = attrs
+        .map(attr => ({ categoryAttributeId: attr.id, value: attributeValues.value[attr.id] ?? '' }))
+        .filter(v => v.value !== '')
+    await $fetch('/api/transaction_attribute_values/upsert', {
+        method: 'POST',
+        body: { transactionId, values }
+    })
+}
 
 function formatCurrency(amount: number | null) {
     return `€${(amount || 0).toFixed(2)}`
@@ -602,6 +673,7 @@ async function handleSubmit() {
             body
         })
 
+        await saveAttributeValues(Number(transactionId.value))
         router.back()
     } catch (error: any) {
         formError.value = error?.data?.message || t('common.saveError')
@@ -616,18 +688,21 @@ async function loadData() {
 
     try {
         // Load dropdown data and transaction in parallel
-        const [accountsData, categoriesData, payeesData, projectsData, txData] = await Promise.all([
+        const [accountsData, categoriesData, payeesData, projectsData, txData, attrData, attrValData] = await Promise.all([
             $fetch<{ accounts: Account[] }>('/api/accounts'),
             $fetch<{ categories: Category[] }>('/api/categories'),
             $fetch<{ payees: Payee[] }>('/api/payees'),
             $fetch<{ projects: Project[] }>('/api/projects'),
-            $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${transactionId.value}`)
+            $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${transactionId.value}`),
+            $fetch<{ attributes: CategoryAttribute[] }>('/api/category_attributes'),
+            $fetch<{ values: Record<string, string> }>(`/api/transactions/${transactionId.value}/attribute_values`)
         ])
 
         accounts.value = accountsData.accounts || []
         categories.value = categoriesData.categories || []
         payees.value = payeesData.payees || []
         projects.value = projectsData.projects || []
+        categoryAttributes.value = attrData.attributes || []
 
         const tx = txData.transaction
         originalData.value = tx
@@ -652,6 +727,11 @@ async function loadData() {
         form.value.fromAccountId = tx.fromAccountId
         form.value.toAccountId = tx.toAccountId
         form.value.categoryId = tx.categoryId && tx.categoryId > 0 ? tx.categoryId : null
+        // Override attribute values with loaded data (watch fired sync above and set defaults)
+        const loadedVals = attrValData.values || {}
+        for (const [key, val] of Object.entries(loadedVals)) {
+            attributeValues.value[Number(key)] = val
+        }
         form.value.payeeId = tx.payeeId
         form.value.projectId = tx.projectId
         form.value.notes = tx.notes || ''
@@ -1184,5 +1264,28 @@ onMounted(() => {
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     display: inline-block;
+}
+
+.attributes-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-border);
+}
+
+.attr-unit-label {
+    color: var(--color-text-muted);
+    font-size: 0.8em;
+    font-weight: 400;
+}
+
+.required-star {
+    color: var(--color-error);
 }
 </style>

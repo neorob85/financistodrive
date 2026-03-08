@@ -115,36 +115,43 @@ VALUES (-1, NULL, '🔀 <SPLIT>', -1, 1, NULL, 0),
        (-2, NULL, '🚫 <NO_CATEGORY>', -1, 1, NULL, 0),
        (-3, NULL, '↔️ <TRANSFER>', -1, 1, NULL, 0);
 
--- ============================================================================
--- TABLE: attributes (no dependencies)
--- ============================================================================
-/*DROP TABLE IF EXISTS attributes;
- 
- CREATE TABLE attributes (
- id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
- -- attribute id
- type INT NOT NULL DEFAULT 1,
- -- type like BINARY, TEXT, LIST, OPTIONS
- title VARCHAR(255) NULL,
- -- name of attribute
- list_values TEXT NULL,
- -- values if list or OPTIONS
- default_value VARCHAR(255) NULL
- );*/
--- ============================================================================
--- TABLE: category_attributes (depends from: category, attributes)
--- ============================================================================
-/*DROP TABLE IF EXISTS categories_attributes;
- 
- CREATE TABLE categories_attributes (
- category_id INT NOT NULL,
- attribute_id INT NOT NULL,
- PRIMARY KEY (category_id, attribute_id),
- -- INDEX `category_attr_idx` (`category_id`),
- -- INDEX `idx_category_attribute_attr` (`attribute_id`),
- CONSTRAINT fk_category_attribute_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE ON UPDATE CASCADE,
- CONSTRAINT fk_category_attribute_attribute FOREIGN KEY (attribute_id) REFERENCES attributes(id) ON DELETE CASCADE ON UPDATE CASCADE
- );*/
+-- ---------------------------------------------------- --
+-- CATEGORY ATTRIBUTES TABLE (depends from: categories)
+-- ---------------------------------------------------- --
+-- Defines custom attributes associated to a category.
+-- type: TEXT, NUMBER, BOOLEAN, DATE, LIST
+
+CREATE TABLE `category_attributes` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Attribute ID',
+    `category_id` INT NOT NULL COMMENT 'Foreign Key To Categories Table',
+    `title` VARCHAR(255) NOT NULL COMMENT 'Attribute Name (e.g. "Plate", "Km", "Receipt No.")',
+    `type` ENUM('TEXT', 'NUMBER', 'BOOLEAN', 'DATE', 'LIST') NOT NULL DEFAULT 'TEXT' COMMENT 'Attribute Type',
+    `list_values` TEXT DEFAULT NULL COMMENT 'JSON array of allowed values when type=LIST (e.g. ["A","B","C"])',
+    `default_value` VARCHAR(255) DEFAULT NULL COMMENT 'Default Value',
+    `unit` VARCHAR(50) DEFAULT NULL COMMENT 'Unit of Measure (e.g. "km", "L", "€", "%")',
+    `is_required` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Is The Attribute Required',
+    `sort_order` INT NOT NULL DEFAULT 0 COMMENT 'Sort Order',
+    CONSTRAINT `fk_category_attributes_categories` FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX `idx_category_attributes_category_id` (`category_id`)
+) COMMENT 'Category Attributes Table. Defines custom attributes per category.';
+
+-- ---------------------------------------------------- --
+-- TRANSACTION ATTRIBUTE VALUES TABLE
+-- (depends from: transactions, category_attributes)
+-- ---------------------------------------------------- --
+-- Stores the values of category attributes for each transaction.
+
+CREATE TABLE `transaction_attribute_values` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Value ID',
+    `transaction_id` INT NOT NULL COMMENT 'Foreign Key To Transactions Table',
+    `category_attribute_id` INT NOT NULL COMMENT 'Foreign Key To Category Attributes Table',
+    `value` VARCHAR(255) DEFAULT NULL COMMENT 'Stored Value',
+    CONSTRAINT `fk_tav_transactions` FOREIGN KEY (`transaction_id`) REFERENCES `transactions`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_tav_category_attributes` FOREIGN KEY (`category_attribute_id`) REFERENCES `category_attributes`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE KEY `uq_tav_transaction_attribute` (`transaction_id`, `category_attribute_id`),
+    INDEX `idx_tav_transaction_id` (`transaction_id`),
+    INDEX `idx_tav_category_attribute_id` (`category_attribute_id`)
+) COMMENT 'Transaction Attribute Values Table. Stores attribute values per transaction.';
 -- ---------------------------------------------------- --
 -- PROJECTS TABLE (depends from: users)
 -- ---------------------------------------------------- --

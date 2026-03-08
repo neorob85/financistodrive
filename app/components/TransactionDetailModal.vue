@@ -112,6 +112,14 @@
                     </div>
                 </div>
 
+                <!-- Category Attribute Values -->
+                <div v-if="attributeValues && attributeValues.length > 0" class="details-grid">
+                    <div v-for="attr in attributeValues" :key="attr.title" class="detail-row">
+                        <span class="label">{{ attr.title }}</span>
+                        <span class="value">{{ formatAttributeValue(attr) }}</span>
+                    </div>
+                </div>
+
                 <!-- Automotive Fuel Details -->
                 <div v-if="transaction.fuelLog" class="automotive-section">
                     <h4>⛽ {{ $t('automotive.fuelDetails') }}</h4>
@@ -276,11 +284,19 @@ interface TransactionDetail {
     maintenanceLogs?: any[]
 }
 
+interface AttributeValue {
+    title: string
+    value: string
+    unit?: string
+    type: string
+}
+
 const props = defineProps({
     show: Boolean,
     loading: Boolean,
     error: String,
-    transaction: Object as PropType<TransactionDetail | null>
+    transaction: Object as PropType<TransactionDetail | null>,
+    attributeValues: Array as PropType<AttributeValue[]>
 })
 
 defineEmits(['close', 'edit', 'delete'])
@@ -304,6 +320,12 @@ function formatFullDate(dateStr: string) {
 
 function getFileName(path: string) {
     return path.split('/').pop() || path
+}
+
+function formatAttributeValue(attr: { value: string; unit?: string; type: string }) {
+    if (attr.type === 'BOOLEAN') return attr.value === '1' ? '✓' : '✗'
+    if (attr.unit) return `${attr.value} ${attr.unit}`
+    return attr.value
 }
 </script>
 

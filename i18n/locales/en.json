@@ -45,7 +45,9 @@
     "maintenance": "Maintenance",
     "scheduled": "Scheduled",
     "alerts": "Maintenance Alerts",
-    "reports": "Reports"
+    "reports": "Reports",
+    "categoryAttributes": "Category Attributes",
+    "attributeChart": "Attribute Chart"
   },
   "login": {
     "title": "Financisto Drive",
@@ -160,6 +162,7 @@
     "notFuelTransaction": "This is not a fuel transaction",
     "notMaintenanceTransaction": "This is not a maintenance transaction",
     "deductibleAmount": "Deductible amount",
+    "categoryAttributes": "Category attributes",
     "periods": {
       "future": "Future",
       "today": "Today",
@@ -620,5 +623,37 @@
   },
   "PeriodSeparator": {
     "transactions": "transactions"
+  },
+  "categoryAttributes": {
+    "title": "Category Attributes",
+    "noAttributes": "No attributes defined",
+    "addFirst": "Create the first attribute for a category",
+    "new": "New attribute",
+    "edit": "Edit attribute",
+    "name": "Attribute name",
+    "type": "Type",
+    "types": {
+      "TEXT": "Text",
+      "NUMBER": "Number",
+      "BOOLEAN": "Yes/No",
+      "DATE": "Date",
+      "LIST": "List"
+    },
+    "category": "Category",
+    "listValues": "List values (one per line)",
+    "listValuesPlaceholder": "Value 1\nValue 2\nValue 3",
+    "defaultValue": "Default value",
+    "unit": "Unit of measure",
+    "required": "Required field",
+    "createAttribute": "Create attribute",
+    "deleteConfirm": "Delete this attribute? All saved values in transactions will also be deleted."
+  },
+  "attributeChart": {
+    "title": "Attribute Chart",
+    "noAttributes": "No numeric category attributes found. Add NUMBER-type attributes to your categories first.",
+    "selectAttributes": "Select attributes to display",
+    "selectHint": "Select one or more attributes above to see the chart.",
+    "resetZoom": "Reset zoom",
+    "zoomHint": "Pinch to zoom · Drag to pan"
   }
 }

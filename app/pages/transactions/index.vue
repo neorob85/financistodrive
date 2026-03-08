@@ -101,7 +101,8 @@
 
     <!-- Transaction Detail Modal -->
     <TransactionDetailModal :show="showDetail" :loading="loadingDetail" :error="detailError"
-      :transaction="detailTransaction" @close="closeDetail" @edit="editTransaction" @delete="deleteTransaction" />
+      :transaction="detailTransaction" :attribute-values="detailAttributeValues"
+      @close="closeDetail" @edit="editTransaction" @delete="deleteTransaction" />
 
 
     <!-- FAB Buttons -->
@@ -424,6 +425,7 @@ const showDetail = ref(false)
 const loadingDetail = ref(false)
 const detailError = ref('')
 const detailTransaction = ref<TransactionDetail | null>(null)
+const detailAttributeValues = ref<{ title: string; value: string; unit?: string; type: string }[]>([])
 
 // Period label mapping
 const periodLabels: Record<string, () => string> = {
@@ -538,10 +540,28 @@ async function openDetail(txId: number) {
   loadingDetail.value = true
   detailError.value = ''
   detailTransaction.value = null
+  detailAttributeValues.value = []
 
   try {
-    const result = await $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${txId}`)
-    detailTransaction.value = result.transaction
+    const [txResult, attrValResult, allAttrsResult] = await Promise.all([
+      $fetch<{ transaction: TransactionDetail }>(`/api/transactions/${txId}`),
+      $fetch<{ values: Record<number, string> }>(`/api/transactions/${txId}/attribute_values`),
+      $fetch<{ attributes: any[] }>('/api/category_attributes')
+    ])
+    detailTransaction.value = txResult.transaction
+
+    const categoryId = txResult.transaction.categoryId
+    if (categoryId && attrValResult.values) {
+      const attrs = (allAttrsResult.attributes || []).filter((a: any) => a.categoryId === categoryId)
+      detailAttributeValues.value = attrs
+        .map((a: any) => ({
+          title: a.title,
+          value: attrValResult.values[a.id] ?? '',
+          unit: a.unit || undefined,
+          type: a.type
+        }))
+        .filter(av => av.value !== '')
+    }
   } catch (error: any) {
     console.error('Failed to fetch transaction details:', error)
     detailError.value = error?.data?.message || t('transactions.loadError')
@@ -553,6 +573,7 @@ async function openDetail(txId: number) {
 function closeDetail() {
   showDetail.value = false
   detailTransaction.value = null
+  detailAttributeValues.value = []
 }
 
 // Edit transaction - navigate to edit page

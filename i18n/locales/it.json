@@ -45,7 +45,9 @@
     "maintenance": "Manutenzioni",
     "scheduled": "Programmate",
     "alerts": "Avvisi Manutenzione",
-    "reports": "Report"
+    "reports": "Report",
+    "categoryAttributes": "Attributi Categorie",
+    "attributeChart": "Grafico Attributi"
   },
   "login": {
     "title": "Financisto Drive",
@@ -160,6 +162,7 @@
     "notFuelTransaction": "Questa non è una transazione rifornimento",
     "notMaintenanceTransaction": "Questa non è una transazione manutenzione",
     "deductibleAmount": "Importo deducibile",
+    "categoryAttributes": "Attributi categoria",
     "periods": {
       "future": "Futuro",
       "today": "Oggi",
@@ -620,5 +623,37 @@
   },
   "PeriodSeparator": {
     "transactions": "transazioni"
+  },
+  "categoryAttributes": {
+    "title": "Attributi Categorie",
+    "noAttributes": "Nessun attributo definito",
+    "addFirst": "Crea il primo attributo per una categoria",
+    "new": "Nuovo attributo",
+    "edit": "Modifica attributo",
+    "name": "Nome attributo",
+    "type": "Tipo",
+    "types": {
+      "TEXT": "Testo",
+      "NUMBER": "Numero",
+      "BOOLEAN": "Sì/No",
+      "DATE": "Data",
+      "LIST": "Lista"
+    },
+    "category": "Categoria",
+    "listValues": "Valori lista (uno per riga)",
+    "listValuesPlaceholder": "Valore 1\nValore 2\nValore 3",
+    "defaultValue": "Valore predefinito",
+    "unit": "Unità di misura",
+    "required": "Campo obbligatorio",
+    "createAttribute": "Crea attributo",
+    "deleteConfirm": "Eliminare questo attributo? Verranno eliminati anche i valori salvati nelle transazioni."
+  },
+  "attributeChart": {
+    "title": "Grafico Attributi",
+    "noAttributes": "Nessun attributo numerico trovato. Aggiungi prima attributi di tipo NUMERO alle tue categorie.",
+    "selectAttributes": "Seleziona gli attributi da visualizzare",
+    "selectHint": "Seleziona uno o piu attributi per visualizzare il grafico.",
+    "resetZoom": "Reimposta zoom",
+    "zoomHint": "Pizzica per zoomare · Trascina per scorrere"
   }
 }

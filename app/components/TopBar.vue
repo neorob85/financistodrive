@@ -59,6 +59,11 @@
 
       <!-- Right group: Entities menu -->
       <div class="top-bar-right">
+        <NuxtLink to="/attribute_chart" class="dashboard-link" :title="$t('nav.attributeChart')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </NuxtLink>
         <NuxtLink to="/reports" class="dashboard-link" :title="$t('nav.reports')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 20V10M12 20V4M6 20v-6" stroke-linecap="round" stroke-linejoin="round" />
@@ -136,6 +141,13 @@
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 {{ $t('nav.alerts') }}
+              </NuxtLink>
+              <NuxtLink to="/category_attributes" class="menu-item" @click="closeArchivesMenu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+                  <line x1="7" y1="7" x2="7.01" y2="7" />
+                </svg>
+                {{ $t('nav.categoryAttributes') }}
               </NuxtLink>
             </div>
           </Transition>
