@@ -1,5 +1,7 @@
 <template>
-  <div class="transaction-card" :class="{ 'card-maintenance': transaction.logType === 'maintenance' }" @click="$emit('click')">
+  <div class="transaction-card"
+    :class="{ 'card-maintenance': transaction.logType === 'maintenance', 'card-incoming-transfer': isIncomingSplitTransfer, 'card-verified': verified, 'card-review': reviewMode }"
+    @click="$emit('click')">
     <!-- Date badge -->
     <div class="tx-date-badge" :class="transactionType">
       <span class="tx-day">{{ dayNumber }}</span>
@@ -11,6 +13,7 @@
     <div class="tx-info">
       <div class="tx-title">{{ transaction.title }}</div>
       <div class="tx-meta">
+        <span v-if="isIncomingSplitTransfer" class="tx-transfer-flag">↙ {{ $t('transactions.transferReceived') }}</span>
         <span class="tx-badge">{{ txTime }}</span>
         <span class="tx-badge">{{ transaction.accountTitle }}</span>
         <span v-if="transaction.categoryTitle" class="tx-category">{{ transaction.categoryTitle }}</span>
@@ -33,6 +36,7 @@
 <script setup lang="ts">
 interface Transaction {
   id: number
+  parentId?: number | null
   title: string
   amountFrom: number
   amountTo?: number | null
@@ -40,6 +44,10 @@ interface Transaction {
   categoryTitle?: string | null
   accountTitle: string
   toAccountId?: number | null
+  fromAccountId?: number | null
+  isTransfer?: boolean
+  isIncomingTransfer?: boolean
+  isSplitTransfer?: boolean
   vehicleName?: string | null
   odometer?: number | null
   logType?: string | null
@@ -51,11 +59,23 @@ const { locale } = useI18n()
 
 const props = defineProps<{
   transaction: Transaction
+  currentAccountId?: number
+  reviewMode?: boolean
+  verified?: boolean
 }>()
 
 defineEmits(['click'])
 
+// Transfer received on THIS account, originated from a split on another account.
+// These are highlighted with a dedicated flag and card color.
+const isIncomingSplitTransfer = computed(() =>
+  !!props.transaction.isIncomingTransfer && !!props.transaction.isSplitTransfer
+)
+
 const transactionType = computed(() => {
+  if (isIncomingSplitTransfer.value) {
+    return 'income'
+  }
   if (props.transaction.toAccountId) {
     return 'transfer'
   }
@@ -63,6 +83,11 @@ const transactionType = computed(() => {
 })
 
 const formattedAmount = computed(() => {
+  // Incoming transfer: show the amount actually received on this account
+  if (isIncomingSplitTransfer.value) {
+    const received = Math.abs(props.transaction.amountTo ?? props.transaction.amountFrom)
+    return `+€${received.toFixed(2)}`
+  }
   const amount = Math.abs(props.transaction.amountFrom)
   const sign = props.transaction.amountFrom < 0 ? '-' : (props.transaction.toAccountId ? '' : '+')
   return `${sign}€${amount.toFixed(2)}`
@@ -126,9 +151,33 @@ const txTime = computed(() => {
   box-shadow: var(--shadow-lg);
 }
 
+/* Review mode: no horizontal shift, keep taps feeling like a checklist */
+.transaction-card.card-review:hover {
+  transform: none;
+}
+
+/* Verified during reconciliation: faded so it reads as "already checked" */
+.transaction-card.card-verified {
+  opacity: 0.4;
+}
+
 .transaction-card.card-maintenance {
   border-left: 3px solid var(--color-warning-border);
   background: linear-gradient(135deg, var(--color-warning-bg), var(--color-bg-card));
+}
+
+.transaction-card.card-incoming-transfer {
+  border-left: 3px solid var(--color-accent, #6366f1);
+  background: linear-gradient(135deg, var(--color-accent-bg, rgba(99, 102, 241, 0.12)), var(--color-bg-card));
+}
+
+.tx-transfer-flag {
+  background: var(--color-accent-bg, rgba(99, 102, 241, 0.12));
+  color: var(--color-accent, #6366f1);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .tx-date-badge {

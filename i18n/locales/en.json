@@ -114,6 +114,14 @@
     "addFirst": "Your transactions will appear here",
     "loadingTransactions": "Loading transactions...",
     "scrollToLoadMore": "Scroll to load more transactions",
+    "reviewMode": {
+      "toggle": "Review",
+      "active": "Review mode active",
+      "hint": "Tap a transaction to mark it as verified",
+      "counter": "Verified {done} / {total}",
+      "clear": "Clear",
+      "clearConfirm": "Remove all verifications for this account?"
+    },
     "details": "Transaction Details",
     "description": "Description",
     "amount": "Amount",
@@ -134,6 +142,7 @@
     "expense": "Expense",
     "income": "Income",
     "transfer": "Transfer",
+    "transferReceived": "Transfer received",
     "split": "Split",
     "splitTransaction": "Split Transaction",
     "subdivision": "Subdivision",

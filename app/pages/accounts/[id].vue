@@ -16,6 +16,26 @@
                 <div class="skeleton-title"></div>
                 <div class="skeleton-balance"></div>
             </div>
+            <button class="review-toggle" :class="{ active: reviewMode }" @click="toggleReviewMode"
+                :title="$t('transactions.reviewMode.toggle')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+                <span>{{ $t('transactions.reviewMode.toggle') }}</span>
+            </button>
+        </div>
+
+        <!-- Review mode bar -->
+        <div v-if="reviewMode" class="review-bar">
+            <div class="review-info">
+                <span class="review-counter">{{ $t('transactions.reviewMode.counter', { done: verifiedCount, total: transactions.length }) }}</span>
+                <span class="review-hint">{{ $t('transactions.reviewMode.hint') }}</span>
+            </div>
+            <button v-if="verifiedCount > 0" class="review-clear" @click="clearVerified">
+                {{ $t('transactions.reviewMode.clear') }}
+            </button>
         </div>
 
         <!-- Loading state -->
@@ -36,7 +56,8 @@
             <template v-for="(group, period) in groupedTransactions" :key="period">
                 <PeriodSeparator :label="period" :count="group.transactions.length" :balance="group.balance" />
                 <TransactionCard v-for="tx in group.transactions" :key="tx.id" :transaction="tx"
-                    @click="openDetail(tx.id)" />
+                    :current-account-id="accountId" :review-mode="reviewMode" :verified="verifiedIds.has(tx.id)"
+                    @click="onCardClick(tx)" />
             </template>
 
             <!-- Load more indicator -->
@@ -74,11 +95,16 @@ interface Account {
 
 interface Transaction {
     id: number
+    parentId?: number | null
     title: string
     amountFrom: number
     amountTo?: number | null
     transactionDate: string
     toAccountId?: number
+    fromAccountId?: number | null
+    isTransfer?: boolean
+    isIncomingTransfer?: boolean
+    isSplitTransfer?: boolean
     categoryTitle?: string
     accountTitle: string
     balanceAmount: number
@@ -135,6 +161,64 @@ const showDetail = ref(false)
 const loadingDetail = ref(false)
 const detailError = ref('')
 const detailTransaction = ref<TransactionDetail | null>(null)
+
+// Review (reconciliation) mode — client-side only, persisted in localStorage, never touches the DB
+const reviewMode = ref(false)
+const verifiedIds = ref<Set<number>>(new Set())
+const verifiedStorageKey = `financisto:verified:${accountId}`
+
+const verifiedCount = computed(() => verifiedIds.value.size)
+
+function loadVerified() {
+    if (typeof window === 'undefined') return
+    try {
+        const raw = window.localStorage.getItem(verifiedStorageKey)
+        if (raw) verifiedIds.value = new Set(JSON.parse(raw) as number[])
+    } catch (error) {
+        console.warn('Failed to load verified transactions:', error)
+    }
+}
+
+function persistVerified() {
+    if (typeof window === 'undefined') return
+    try {
+        window.localStorage.setItem(verifiedStorageKey, JSON.stringify([...verifiedIds.value]))
+    } catch (error) {
+        console.warn('Failed to persist verified transactions:', error)
+    }
+}
+
+function toggleReviewMode() {
+    reviewMode.value = !reviewMode.value
+}
+
+function toggleVerified(tx: Transaction) {
+    const next = new Set(verifiedIds.value)
+    if (next.has(tx.id)) {
+        next.delete(tx.id)
+    } else {
+        next.add(tx.id)
+    }
+    verifiedIds.value = next
+    persistVerified()
+}
+
+function onCardClick(tx: Transaction) {
+    if (reviewMode.value) {
+        toggleVerified(tx)
+    } else {
+        openDetail(tx)
+    }
+}
+
+function clearVerified() {
+    if (verifiedIds.value.size === 0) return
+    if (!confirm(t('transactions.reviewMode.clearConfirm'))) return
+    verifiedIds.value = new Set()
+    if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(verifiedStorageKey)
+    }
+}
 
 // Derived state
 const groupedTransactions = computed(() => {
@@ -228,7 +312,10 @@ async function fetchTransactions(pageNum: number, append = false) {
     }
 }
 
-async function openDetail(txId: number) {
+async function openDetail(tx: Transaction) {
+    // For split-origin transfers, open the parent transaction so the full split is visible
+    const txId = tx.parentId ?? tx.id
+
     showDetail.value = true
     loadingDetail.value = true
     detailError.value = ''
@@ -296,6 +383,7 @@ async function deleteTransaction(tx: TransactionDetail) {
 
 // Lifecycle
 onMounted(async () => {
+    loadVerified()
     await Promise.all([
         loadAccount(),
         fetchTransactions(1)
@@ -315,9 +403,10 @@ function setupInfiniteScroll() {
         { threshold: 0.1 }
     )
 
-    watch(loadMoreRef, (el) => {
+    watch(loadMoreRef, (el: HTMLElement | null, prevEl: HTMLElement | null) => {
+        if (prevEl) observer.unobserve(prevEl)
         if (el) observer.observe(el)
-    })
+    }, { immediate: true })
 
     onUnmounted(() => observer.disconnect())
 }
@@ -351,6 +440,79 @@ function setupInfiniteScroll() {
 }
 
 .back-btn:hover {
+    background: var(--color-bg-glass);
+}
+
+.review-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-sm) var(--space-md);
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.review-toggle:hover {
+    background: var(--color-bg-glass);
+}
+
+.review-toggle.active {
+    background: var(--color-accent-bg, rgba(99, 102, 241, 0.12));
+    color: var(--color-accent, #6366f1);
+    border-color: var(--color-accent, #6366f1);
+}
+
+.review-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-accent-bg, rgba(99, 102, 241, 0.12));
+    border: 1px solid var(--color-accent, #6366f1);
+    border-radius: var(--radius-xl);
+}
+
+.review-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.review-counter {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-accent, #6366f1);
+}
+
+.review-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.review-clear {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    cursor: pointer;
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.review-clear:hover {
     background: var(--color-bg-glass);
 }
 

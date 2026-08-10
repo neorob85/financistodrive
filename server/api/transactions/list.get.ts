@@ -28,12 +28,14 @@ export default defineEventHandler(async (event) => {
 
             if (accountId) {
                 // Get transactions for account
+                // Param order follows `?` occurrence in the SQL:
+                //   balanceAmount CASE (accountId), user_id, from_account_id, to_account_id (top-level), to_account_id (split), limit, offset
                 const txSql = await loadSql('transactions/get_account_transactions_paginated.sql')
-                transactions = await conn.query(txSql, [result.userId, accountId, accountId, limit, offset])
+                transactions = await conn.query(txSql, [accountId, result.userId, accountId, accountId, accountId, limit, offset])
 
                 // Get total count for account
                 const countSql = await loadSql('transactions/count_account_transactions.sql')
-                const countResult = await conn.query(countSql, [result.userId, accountId, accountId])
+                const countResult = await conn.query(countSql, [result.userId, accountId, accountId, accountId])
                 total = Number(countResult[0]?.total || 0)
             } else {
                 // Get all transactions
@@ -65,11 +67,18 @@ export default defineEventHandler(async (event) => {
         return {
             transactions: data.transactions.map((tx: any) => ({
                 id: tx.id,
+                parentId: tx.parentId ?? null,
                 title: tx.title,
                 amountFrom: Number(tx.amountFrom),
                 amountTo: tx.amountTo ? Number(tx.amountTo) : null,
                 transactionDate: formatLocalDate(tx.transactionDate),
                 toAccountId: tx.toAccountId,
+                isTransfer: !!tx.isTransfer,
+                // True when this account is the destination of a transfer.
+                // For split-child transfers this row is surfaced only on the receiving account.
+                isIncomingTransfer: !!tx.isTransfer && accountId !== null && Number(tx.toAccountId) === accountId,
+                // Split-origin transfers carry a parentId: clicking should open the parent transaction
+                isSplitTransfer: !!tx.isTransfer && tx.parentId !== null && tx.parentId !== undefined,
                 categoryTitle: tx.categoryTitle,
                 accountTitle: tx.accountTitle,
                 balanceAmount: Number(tx.balanceAmount),
