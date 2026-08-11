@@ -142,6 +142,7 @@ interface Transaction {
   projectTitle?: string | null
   vehicleId?: number | null
   balanceAmount: number
+  isDeferred?: boolean
   vehicleName?: string | null
   odometer?: number | null
   hasDeductible?: boolean

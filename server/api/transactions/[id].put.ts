@@ -33,6 +33,7 @@ export default defineEventHandler(async (event) => {
         isTransfer,
         currencyId,
         deductibleAmount,
+        isDeferred, // Credit cards only: the bank billed this charge in the next cycle
         splits
     } = body
 
@@ -52,6 +53,10 @@ export default defineEventHandler(async (event) => {
             if (!original) {
                 throw createError({ statusCode: 404, message: 'Transazione non trovata' })
             }
+
+            // Recomputed on every save: the flag is relative to the account and date
+            // being written, both of which the edit may have changed.
+            const billingDate = await resolveBillingDate(conn, fromAccountId, result.userId, transactionDate, !!isDeferred)
 
             // 2. Get original children for transfer reversals
             const originalChildren = await conn.query(
@@ -100,7 +105,8 @@ export default defineEventHandler(async (event) => {
                     notes = ?,
                     is_transfer = ?,
                     currency_id = ?,
-                    deductible_amount = ?
+                    deductible_amount = ?,
+                    billing_date = ?
                  WHERE id = ? AND user_id = ?`,
                 [
                     title,
@@ -116,6 +122,7 @@ export default defineEventHandler(async (event) => {
                     isTransfer ? 1 : 0,
                     currencyId,
                     deductibleAmount !== undefined ? (deductibleAmount || null) : null,
+                    billingDate,
                     transactionId,
                     result.userId
                 ]

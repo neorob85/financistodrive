@@ -177,6 +177,9 @@ export default defineEventHandler(async (event) => {
             deductibleAmount: data.row.deductible_amount ? parseFloat(data.row.deductible_amount) : null,
             isTransfer: !!data.row.is_transfer,
             isAutomotive: !!data.row.is_automotive,
+            // Set only when the bank billed the charge in a cycle other than its own
+            isDeferred: !!data.row.billing_date,
+            billingDate: data.row.billing_date ? formatLocalDate(data.row.billing_date) : null,
             parentId: data.row.parent_id,
             transactionType,
             isSplit,

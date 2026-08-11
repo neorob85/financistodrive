@@ -16,6 +16,7 @@ SELECT
   t.is_transfer AS is_transfer, 
   t.is_automotive AS is_automotive,
   t.deductible_amount AS deductible_amount,
+  t.billing_date AS billing_date,
   fa.title AS from_account_title,
   ta.title AS to_account_title,
   c.title AS category_title,

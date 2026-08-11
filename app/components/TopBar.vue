@@ -55,7 +55,10 @@
       </div>
 
       <!-- App title (center) -->
-      <h1 class="app-title">{{ appName }}</h1>
+      <h1 class="app-title">
+        {{ appName }}
+        <span class="app-version">v{{ appVersion }}</span>
+      </h1>
 
       <!-- Right group: Entities menu -->
       <div class="top-bar-right">
@@ -172,6 +175,7 @@ const props = defineProps<{
 
 const config = useRuntimeConfig()
 const appName = config.public.appName as string
+const appVersion = config.public.appVersion as string
 
 const router = useRouter()
 const userMenuOpen = ref(false)
@@ -369,10 +373,21 @@ function handleOutsideClick(e: Event) {
 }
 
 .app-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  white-space: nowrap;
   font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--color-text-secondary);
+}
+
+.app-version {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  opacity: 0.6;
 }
 
 /* Dropdown animation */

@@ -68,6 +68,10 @@ export default defineEventHandler(async (event) => {
         // Reset pool so next connection uses new config
         await resetPool()
 
+        // The schema file is already current, so nothing will change here; this simply
+        // records the migrations as applied so later upgrades start from a known state.
+        await ensureMigrations()
+
         return { success: true }
     } catch (error: any) {
         throw createError({

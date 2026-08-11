@@ -90,20 +90,75 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 # Docker
 
-Build the image
+## Build
+
+Use the build script, which reads the version from `package.json` and tags the
+image twice — with that version and with `latest`:
 
 ```bash
-docker build -t financisto-drive .
+sudo ./build.sh
 ```
 
-Then start the image
+For `"version": "1.0.0"` this produces `financistodrive:1.0.0` and
+`financistodrive:latest` (two tags on the same image).
+
+Options, as environment variables:
+
+```bash
+IMAGE_NAME=myregistry/financistodrive ./build.sh   # different image name
+PUSH=1 IMAGE_NAME=myregistry/financistodrive ./build.sh   # build and push both tags
+```
+
+The version is also baked into the image as the `APP_VERSION` environment
+variable and as the `org.opencontainers.image.version` label, and it is what the
+app shows next to its name in the top bar.
+
+## Releasing a new version
+
+```bash
+npm version patch   # or minor / major — bumps package.json and creates a git tag
+sudo ./build.sh
+```
+
+Older images keep their version tag, so `docker images financistodrive` lists
+every release you have built and you can go back to any of them. Note that
+rolling back the image does **not** roll back the database: take a backup before
+upgrading if a release changes the schema.
+
+## Run
 
 ```bash
 docker run -d \
-  --name financisto-drive \
+  --name financistodrive \
   -p 3000:3000 \
   -v financisto-data:/app/server/data \
   -v financisto-uploads:/app/public/uploads \
-  financisto-drive
+  financistodrive:latest
 ```
+
+## Portainer stack
+
+Reference the tag through a variable so the version can be picked from the
+Portainer UI:
+
+```yaml
+services:
+  financistodrive:
+    image: financistodrive:${APP_TAG:-latest}
+    pull_policy: never   # image is built locally, not pulled from a registry
+    container_name: financistodrive
+    ports:
+      - "3000:3000"
+    volumes:
+      - financisto-data:/app/server/data
+      - financisto-uploads:/app/public/uploads
+    restart: unless-stopped
+
+volumes:
+  financisto-data:
+  financisto-uploads:
+```
+
+Set `APP_TAG` in the stack's *Environment variables* (e.g. `1.0.0`) and redeploy
+to switch version; leave it unset to follow `latest`.
 

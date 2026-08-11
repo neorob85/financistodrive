@@ -258,6 +258,8 @@ CREATE TABLE `transactions` (
     `is_transfer` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Is The Transaction A Transfer?',
     `is_automotive` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Is The Transaction An Automotive Transaction?',
     `deductible_amount` DECIMAL(10,2) DEFAULT NULL COMMENT 'Deductible amount for tax purposes',
+    `is_system_generated` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Created By The App Itself With No User Counterpart (e.g. automatic credit card payments). Scheduled transactions are NOT system generated: the user defined them.',
+    `billing_date` DATETIME DEFAULT NULL COMMENT 'Credit Cards Only: Date The Bank Actually Billed This Charge, When It Differs From transaction_date (e.g. a purchase made on the last day of a cycle posted into the next one). Credit card cycle totals use COALESCE(billing_date, transaction_date); monthly expense reports always use transaction_date.',
     CONSTRAINT `fk_transactions_currencies` FOREIGN KEY (`currency_id`) REFERENCES `currencies`(`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT `fk_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT `fk_transactions_categories` FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON UPDATE CASCADE ON DELETE SET NULL,

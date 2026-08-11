@@ -12,6 +12,12 @@ RUN npm run build
 # Stage 2: Production
 FROM node:22-alpine
 
+# Version of the image, passed by build.sh from package.json
+ARG APP_VERSION=dev
+LABEL org.opencontainers.image.title="Financisto Drive" \
+      org.opencontainers.image.version="${APP_VERSION}"
+ENV APP_VERSION=${APP_VERSION}
+
 WORKDIR /app
 
 COPY --from=build /app/.output .output

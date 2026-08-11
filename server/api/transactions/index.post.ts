@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
         isTransfer,
         isAutomotive,
         deductibleAmount,
+        isDeferred, // Credit cards only: the bank billed this charge in the next cycle
         splits // Array of split items: { title, amountFrom, amountTo, categoryId, toAccountId, isTransfer }
     } = body
 
@@ -47,11 +48,16 @@ export default defineEventHandler(async (event) => {
 
     try {
         const parentId = await withConnection(async (conn) => {
+            // Deferral only applies to credit cards; resolveBillingDate drops the flag
+            // on any other account. Split children follow the parent, since the bank
+            // moves the whole charge.
+            const billingDate = await resolveBillingDate(conn, fromAccountId, result.userId, transactionDate, !!isDeferred)
+
             // Insert main transaction
             const insertResult = await conn.query(
-                `INSERT INTO transactions 
-       (title, amount_from, amount_to, from_account_id, to_account_id, category_id, payee_id, project_id, currency_id, transaction_date, notes, is_transfer, is_automotive, deductible_amount, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                `INSERT INTO transactions
+       (title, amount_from, amount_to, from_account_id, to_account_id, category_id, payee_id, project_id, currency_id, transaction_date, notes, is_transfer, is_automotive, deductible_amount, billing_date, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     title,
                     amountFrom,
@@ -67,6 +73,7 @@ export default defineEventHandler(async (event) => {
                     isTransfer ? 1 : 0,
                     isAutomotive ? 1 : 0,
                     deductibleAmount || null,
+                    billingDate,
                     result.userId
                 ]
             )

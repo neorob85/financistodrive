@@ -108,6 +108,7 @@ interface Transaction {
     categoryTitle?: string
     accountTitle: string
     balanceAmount: number
+    isDeferred?: boolean
 }
 
 interface TransactionDetail {

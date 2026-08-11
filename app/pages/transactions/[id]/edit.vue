@@ -254,6 +254,18 @@
                     step="0.01" min="0" placeholder="0.00" class="input-field">
             </div>
 
+            <!-- Billed in the next cycle (credit cards only) -->
+            <div v-if="isCreditCardSource" class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" v-model="form.isDeferred" @change="runDeferralCheck">
+                    {{ $t('transactions.deferredToNextCycle') }}
+                </label>
+                <p class="field-hint">{{ $t('transactions.deferredToNextCycleHint') }}</p>
+                <p v-if="form.isDeferred && deferral.alreadyPaid.value" class="field-warning">
+                    ⚠️ {{ $t('transactions.deferredCycleAlreadyPaid') }}
+                </p>
+            </div>
+
             <!-- Error message -->
             <div v-if="formError" class="form-error">{{ formError }}</div>
 
@@ -277,6 +289,7 @@ definePageMeta({
 interface Account {
     id: number
     title: string
+    isCreditCard: boolean
 }
 
 interface Category {
@@ -344,6 +357,7 @@ interface TransactionDetail {
     payeeId: number | null
     notes: string | null
     deductibleAmount: number | null
+    isDeferred: boolean
     isTransfer: boolean
     isAutomotive: boolean
     attachments: Attachment[]
@@ -397,7 +411,29 @@ const form = ref({
     payeeId: null as number | null,
     projectId: null as number | null,
     notes: '',
-    deductibleAmount: null as number | null
+    deductibleAmount: null as number | null,
+    isDeferred: false
+})
+
+const deferral = useDeferralCheck()
+
+// The flag only exists on credit cards, so the source account decides whether it shows
+const isCreditCardSource = computed(() =>
+    accounts.value.some(a => a.id === form.value.fromAccountId && a.isCreditCard)
+)
+
+function runDeferralCheck() {
+    deferral.check(form.value.fromAccountId, form.value.transactionDate, form.value.isDeferred)
+}
+
+// Switching to a non-card account or changing the date invalidates the flag/warning
+watch(() => [form.value.fromAccountId, form.value.transactionDate], () => {
+    if (!isCreditCardSource.value) {
+        form.value.isDeferred = false
+        deferral.reset()
+        return
+    }
+    runDeferralCheck()
 })
 
 const flatCategories = computed(() => {
@@ -652,7 +688,8 @@ async function handleSubmit() {
             notes: form.value.notes,
             isTransfer,
             currencyId: 1,
-            deductibleAmount: form.value.deductibleAmount || null
+            deductibleAmount: form.value.deductibleAmount || null,
+            isDeferred: isCreditCardSource.value && form.value.isDeferred
         }
 
         if (isSplit.value && splits.value.length > 0) {
@@ -736,6 +773,7 @@ async function loadData() {
         form.value.projectId = tx.projectId
         form.value.notes = tx.notes || ''
         form.value.deductibleAmount = tx.deductibleAmount || null
+        form.value.isDeferred = !!tx.isDeferred
 
         // Determine transaction type
         if (tx.isTransfer) {
@@ -966,6 +1004,21 @@ onMounted(() => {
     display: flex;
     gap: var(--space-lg);
     padding: var(--space-sm) 0;
+}
+
+/* Deferred-billing field */
+.field-hint {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+.field-warning {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--color-danger, #d94b4b);
 }
 
 .checkbox-label {

@@ -50,6 +50,20 @@ export default defineEventHandler(async (event) => {
 
         const tables = backup.tables
 
+        // Backups written before is_system_generated existed carry the distinction only
+        // in the title and notes the credit card plugin used at the time. Recovering it
+        // matters: a restored automatic payment read as a manual one would be deducted
+        // from the next bill and the cycle would go unpaid.
+        function systemGeneratedFlag(tx: any): number {
+            if (tx.is_system_generated !== undefined && tx.is_system_generated !== null) {
+                return tx.is_system_generated ? 1 : 0
+            }
+            return tx.is_transfer
+                && typeof tx.title === 'string' && tx.title.startsWith('Pagamento carta ')
+                && tx.notes === 'Pagamento automatico periodo contabile precedente'
+                ? 1 : 0
+        }
+
         // Perform restore within a single transaction
         await withConnection(async (conn) => {
             await conn.beginTransaction()
@@ -227,8 +241,8 @@ export default defineEventHandler(async (event) => {
                     const res = await conn.query(
                         `INSERT INTO transactions (from_account_id, to_account_id, amount_from, amount_to,
                          category_id, parent_id, project_id, title, transaction_date, currency_id,
-                         user_id, payee_id, notes, is_transfer, is_automotive)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         user_id, payee_id, notes, is_transfer, is_automotive, is_system_generated, billing_date)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                         [
                             remap(accountMap, tx.from_account_id),
                             remap(accountMap, tx.to_account_id),
@@ -240,7 +254,9 @@ export default defineEventHandler(async (event) => {
                             remap(currencyMap, tx.currency_id) || tx.currency_id,
                             userId,
                             remap(payeeMap, tx.payee_id),
-                            tx.notes, tx.is_transfer, tx.is_automotive
+                            tx.notes, tx.is_transfer, tx.is_automotive,
+                            systemGeneratedFlag(tx),
+                            tx.billing_date ?? null
                         ]
                     )
                     transactionMap.set(tx.id, Number(res.insertId))
@@ -250,8 +266,8 @@ export default defineEventHandler(async (event) => {
                     const res = await conn.query(
                         `INSERT INTO transactions (from_account_id, to_account_id, amount_from, amount_to,
                          category_id, parent_id, project_id, title, transaction_date, currency_id,
-                         user_id, payee_id, notes, is_transfer, is_automotive)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         user_id, payee_id, notes, is_transfer, is_automotive, is_system_generated, billing_date)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                         [
                             remap(accountMap, tx.from_account_id),
                             remap(accountMap, tx.to_account_id),
@@ -263,7 +279,9 @@ export default defineEventHandler(async (event) => {
                             remap(currencyMap, tx.currency_id) || tx.currency_id,
                             userId,
                             remap(payeeMap, tx.payee_id),
-                            tx.notes, tx.is_transfer, tx.is_automotive
+                            tx.notes, tx.is_transfer, tx.is_automotive,
+                            systemGeneratedFlag(tx),
+                            tx.billing_date ?? null
                         ]
                     )
                     transactionMap.set(tx.id, Number(res.insertId))

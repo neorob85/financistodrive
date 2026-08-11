@@ -29,7 +29,8 @@ SELECT
   COALESCE(v_fuel.brand, v_maint.brand) as vehicleBrand,
   COALESCE(v_fuel.model, v_maint.model) as vehicleModel,
   COALESCE(fl.vehicle_id, ml.vehicle_id) as vehicleId,
-  t.deductible_amount AS deductibleAmount
+  t.deductible_amount AS deductibleAmount,
+  t.billing_date AS billingDate
 FROM transactions t
 LEFT JOIN categories c ON t.category_id = c.id
 LEFT JOIN accounts a ON t.from_account_id = a.id

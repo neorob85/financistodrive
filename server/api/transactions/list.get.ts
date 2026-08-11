@@ -27,11 +27,26 @@ export default defineEventHandler(async (event) => {
             let total = 0
 
             if (accountId) {
+                // Credit cards use a dedicated balanceAmount branch so that period
+                // totals match the billing cycle shown on the accounts page
+                const accountRow = await conn.query(
+                    `SELECT is_credit_card FROM accounts WHERE id = ? AND user_id = ?`,
+                    [accountId, result.userId]
+                )
+                const isCreditCard = accountRow[0]?.is_credit_card === 1 ? 1 : 0
+
                 // Get transactions for account
                 // Param order follows `?` occurrence in the SQL:
-                //   balanceAmount CASE (accountId), user_id, from_account_id, to_account_id (top-level), to_account_id (split), limit, offset
+                //   isCreditCard, to_account_id + from_account_id (credit card CASE),
+                //   to_account_id (ordinary CASE), user_id, from_account_id,
+                //   to_account_id (top-level), to_account_id (split), limit, offset
                 const txSql = await loadSql('transactions/get_account_transactions_paginated.sql')
-                transactions = await conn.query(txSql, [accountId, result.userId, accountId, accountId, accountId, limit, offset])
+                transactions = await conn.query(txSql, [
+                    isCreditCard, accountId, accountId,
+                    accountId,
+                    result.userId, accountId, accountId, accountId,
+                    limit, offset
+                ])
 
                 // Get total count for account
                 const countSql = await loadSql('transactions/count_account_transactions.sql')
@@ -91,6 +106,8 @@ export default defineEventHandler(async (event) => {
                 odometer: tx.odometer ? Number(tx.odometer) : null,
                 vehicleName: (tx.vehicleBrand || tx.vehicleModel) ? `${tx.vehicleBrand || ''} ${tx.vehicleModel || ''}`.trim() : null,
                 hasAttachment: !!tx.hasAttachment,
+                // Charge the bank billed in a cycle other than the one its date falls in
+                isDeferred: !!tx.billingDate,
                 hasDeductible: tx.deductibleAmount !== null && tx.deductibleAmount !== undefined && Number(tx.deductibleAmount) > 0
             })),
             pagination: {

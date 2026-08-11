@@ -191,7 +191,11 @@
       "clearAll": "Azzera filtri",
       "noResults": "Nessuna transazione corrisponde ai filtri",
       "deductibleOnly": "Solo deducibili"
-    }
+    },
+    "deferredToNextCycle": "Addebitata nel ciclo successivo",
+    "deferredToNextCycleHint": "Spunta se la banca ha addebitato questa spesa sull'estratto conto del mese successivo. La spesa resta nel mese in cui l'hai fatta, cambia solo il ciclo in cui viene pagata.",
+    "deferredCycleAlreadyPaid": "Il ciclo di questa spesa risulta già saldato: spostandola verrà pagata una seconda volta con il prossimo addebito.",
+    "deferredBadge": "Ciclo successivo"
   },
   "automotive": {
     "fuelDetails": "Dettagli Rifornimento",

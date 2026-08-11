@@ -191,7 +191,11 @@
       "clearAll": "Clear filters",
       "noResults": "No transactions match the filters",
       "deductibleOnly": "Deductible only"
-    }
+    },
+    "deferredToNextCycle": "Billed in the next cycle",
+    "deferredToNextCycleHint": "Tick this if the bank put the charge on next month's statement. The expense stays in the month you made it; only the cycle that pays for it changes.",
+    "deferredCycleAlreadyPaid": "This charge's cycle looks already settled: moving it means it will be paid a second time with the next payment.",
+    "deferredBadge": "Next cycle"
   },
   "automotive": {
     "fuelDetails": "Fuel Details",

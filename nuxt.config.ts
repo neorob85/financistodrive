@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs'
+
 // App name — change this to rename the app everywhere
 const APP_NAME = 'Financisto Drive'
 const DB_NAME = 'simplemoney'
+// App version — single source of truth is package.json
+const APP_VERSION = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')).version as string
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -97,7 +101,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     dbName: DB_NAME,
     public: {
-      appName: APP_NAME
+      appName: APP_NAME,
+      appVersion: APP_VERSION
     }
   }
 })
