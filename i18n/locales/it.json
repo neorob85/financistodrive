@@ -77,7 +77,12 @@
     "prevMonthExpenses": "Spese mese precedente",
     "prevMonthIncome": "Entrate mese precedente",
     "prevMonthBalance": "Saldo mese precedente",
-    "prevMonthSection": "Mese precedente"
+    "prevMonthSection": "Mese precedente",
+    "yearExpenses": "Spese anno in corso",
+    "yearIncome": "Entrate anno in corso",
+    "yearBalance": "Saldo anno in corso",
+    "yearSection": "Anno in corso",
+    "yearlyTrend": "Andamento annuale"
   },
   "accounts": {
     "title": "I tuoi Conti",

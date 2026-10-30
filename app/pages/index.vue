@@ -125,6 +125,64 @@
         </div>
       </div>
 
+      <!-- Current year cards -->
+      <div class="prev-month-section">
+        <h2 class="section-title">{{ $t('dashboard.yearSection') }} ({{ stats.currentYear.label }})</h2>
+        <div class="stats-grid">
+          <!-- Current year expenses -->
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon expense-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+                  <polyline points="17 18 23 18 23 12" />
+                </svg>
+              </span>
+              <span class="stat-label">{{ $t('dashboard.yearExpenses') }}</span>
+            </div>
+            <div class="stat-value expense">€ {{ formatAmount(stats.currentYear.expenses) }}</div>
+            <div v-if="stats.yearScheduled.expenses > 0" class="stat-projected expense">
+              € {{ formatAmount(stats.currentYear.expenses + stats.yearScheduled.expenses) }}
+              <span class="projected-label">{{ $t('dashboard.withScheduled') }}</span>
+            </div>
+          </div>
+
+          <!-- Current year income -->
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon income-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                  <polyline points="17 6 23 6 23 12" />
+                </svg>
+              </span>
+              <span class="stat-label">{{ $t('dashboard.yearIncome') }}</span>
+            </div>
+            <div class="stat-value income">€ {{ formatAmount(stats.currentYear.income) }}</div>
+            <div v-if="stats.yearScheduled.income > 0" class="stat-projected income">
+              € {{ formatAmount(stats.currentYear.income + stats.yearScheduled.income) }}
+              <span class="projected-label">{{ $t('dashboard.withScheduled') }}</span>
+            </div>
+          </div>
+
+          <!-- Current year balance -->
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon" :class="stats.currentYear.income >= stats.currentYear.expenses ? 'income-icon' : 'expense-icon'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </span>
+              <span class="stat-label">{{ $t('dashboard.yearBalance') }}</span>
+            </div>
+            <div class="stat-value" :class="stats.currentYear.income >= stats.currentYear.expenses ? 'income' : 'expense'">
+              € {{ formatAmount(stats.currentYear.income - stats.currentYear.expenses) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Chart card -->
       <div class="chart-card glass-card">
         <h2 class="chart-title">{{ $t('dashboard.monthlyTrend') }}</h2>
@@ -136,17 +194,54 @@
             <div v-for="m in stats.months" :key="m.month" class="chart-month">
               <div class="bars-wrapper">
                 <div class="bar-track">
-                  <div class="bar bar-expense" :style="{ height: getBarHeight(m.expenses) + '%' }">
+                  <div class="bar bar-expense" :style="{ height: getBarHeight(m.expenses, monthlyMax) + '%' }">
                     <span v-if="m.expenses > 0" class="bar-tooltip">€ {{ formatAmount(m.expenses) }}</span>
                   </div>
                 </div>
                 <div class="bar-track">
-                  <div class="bar bar-income" :style="{ height: getBarHeight(m.income) + '%' }">
+                  <div class="bar bar-income" :style="{ height: getBarHeight(m.income, monthlyMax) + '%' }">
                     <span v-if="m.income > 0" class="bar-tooltip">€ {{ formatAmount(m.income) }}</span>
                   </div>
                 </div>
               </div>
               <span class="month-label">{{ formatMonthLabel(m.month) }}</span>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot expense-dot"></span>
+              <span>{{ $t('dashboard.expenses') }}</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot income-dot"></span>
+              <span>{{ $t('dashboard.income') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yearly chart card -->
+      <div class="chart-card glass-card yearly-chart">
+        <h2 class="chart-title">{{ $t('dashboard.yearlyTrend') }}</h2>
+        <div v-if="stats.years.length === 0" class="chart-empty">
+          <p>{{ $t('common.noData') }}</p>
+        </div>
+        <div v-else class="chart-container">
+          <div class="chart-bars">
+            <div v-for="y in stats.years" :key="y.year" class="chart-month">
+              <div class="bars-wrapper">
+                <div class="bar-track">
+                  <div class="bar bar-expense" :style="{ height: getBarHeight(y.expenses, yearlyMax) + '%' }">
+                    <span v-if="y.expenses > 0" class="bar-tooltip">€ {{ formatAmount(y.expenses) }}</span>
+                  </div>
+                </div>
+                <div class="bar-track">
+                  <div class="bar bar-income" :style="{ height: getBarHeight(y.income, yearlyMax) + '%' }">
+                    <span v-if="y.income > 0" class="bar-tooltip">€ {{ formatAmount(y.income) }}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="month-label">{{ y.year }}</span>
             </div>
           </div>
           <div class="chart-legend">
@@ -230,13 +325,22 @@ interface MonthData {
   expenses: number
 }
 
+interface YearData {
+  year: string
+  income: number
+  expenses: number
+}
+
 interface DashboardStats {
   currentMonth: { expenses: number; income: number }
   scheduled: { expenses: number; income: number }
   prevMonth: { label: string; expenses: number; income: number }
   prevScheduled: { expenses: number; income: number }
+  currentYear: { label: string; expenses: number; income: number }
+  yearScheduled: { expenses: number; income: number }
   averages: { expenses: number; income: number }
   months: MonthData[]
+  years: YearData[]
 }
 
 interface VehicleStats {
@@ -261,22 +365,28 @@ const stats = ref<DashboardStats>({
   scheduled: { expenses: 0, income: 0 },
   prevMonth: { label: '', expenses: 0, income: 0 },
   prevScheduled: { expenses: 0, income: 0 },
+  currentYear: { label: '', expenses: 0, income: 0 },
+  yearScheduled: { expenses: 0, income: 0 },
   averages: { expenses: 0, income: 0 },
-  months: []
+  months: [],
+  years: []
 })
 const vehicles = ref<VehicleStats[]>([])
 
-const maxValue = computed(() => {
+function maxOf(items: { income: number; expenses: number }[]): number {
   let max = 0
-  for (const m of stats.value.months) {
+  for (const m of items) {
     if (m.expenses > max) max = m.expenses
     if (m.income > max) max = m.income
   }
   return max || 1
-})
+}
 
-function getBarHeight(value: number): number {
-  return Math.max(2, (value / maxValue.value) * 100)
+const monthlyMax = computed(() => maxOf(stats.value.months))
+const yearlyMax = computed(() => maxOf(stats.value.years))
+
+function getBarHeight(value: number, max: number): number {
+  return Math.max(2, (value / max) * 100)
 }
 
 function formatAmount(amount: number): string {
@@ -296,7 +406,7 @@ function formatMonthLabel(monthStr: string): string {
   return date.toLocaleDateString(locale.value, { month: 'short' }).replace('.', '')
 }
 
-const CACHE_KEY = 'dashboard-cache-v1'
+const CACHE_KEY = 'dashboard-cache-v2'
 const CACHE_MAX_AGE = 10 * 60 * 1000 // 10 minuti
 
 onMounted(async () => {
@@ -604,6 +714,10 @@ onMounted(async () => {
 
 .income-dot {
   background: var(--color-success);
+}
+
+.yearly-chart {
+  margin-top: var(--space-xl);
 }
 
 /* Previous month section */

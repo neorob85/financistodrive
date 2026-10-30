@@ -77,7 +77,12 @@
     "prevMonthExpenses": "Previous Month Expenses",
     "prevMonthIncome": "Previous Month Income",
     "prevMonthBalance": "Previous Month Balance",
-    "prevMonthSection": "Previous Month"
+    "prevMonthSection": "Previous Month",
+    "yearExpenses": "Current Year Expenses",
+    "yearIncome": "Current Year Income",
+    "yearBalance": "Current Year Balance",
+    "yearSection": "Current Year",
+    "yearlyTrend": "Yearly Trend"
   },
   "accounts": {
     "title": "Your Accounts",

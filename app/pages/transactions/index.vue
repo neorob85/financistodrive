@@ -89,7 +89,8 @@
     <div v-else class="transactions-list" ref="listRef">
       <template v-for="(group, periodKey) in groupedTransactions" :key="periodKey">
         <PeriodSeparator :label="group.label" :count="group.transactions.length" :balance="group.balance" />
-        <TransactionCard v-for="tx in group.transactions" :key="tx.id" :transaction="tx" @click="openDetail(tx.id)" />
+        <TransactionCard v-for="tx in group.transactions" :key="tx.id" :transaction="tx" :data-tx-id="tx.id"
+          @click="openDetail(tx.id)" />
       </template>
 
       <!-- Load more indicator -->
@@ -282,6 +283,47 @@ const filterDateTo = ref('')
 const filterDeductibleOnly = ref(false)
 const dateFromFocused = ref(false)
 const dateToFocused = ref(false)
+
+// List state saved when opening the edit page, so that coming back restores
+// filters, loaded pages and scroll position on the edited transaction
+interface SavedListState {
+  txId: number
+  page: number
+  showFilters: boolean
+  filters: {
+    categoryId: number | null
+    accountId: number | null
+    projectId: number | null
+    vehicleId: number | null
+    dateFrom: string
+    dateTo: string
+    deductibleOnly: boolean
+  }
+}
+
+const savedListState = useState<SavedListState | null>('transactions-list-state', () => null)
+
+// Restore only when returning (history back) from that transaction's edit page
+function takeSavedListState(): SavedListState | null {
+  const saved = savedListState.value
+  savedListState.value = null
+  if (!saved || !import.meta.client) return null
+  const forward = window.history.state?.forward
+  if (typeof forward !== 'string' || !forward.startsWith(`/transactions/${saved.txId}/edit`)) return null
+  return saved
+}
+
+const restoreState = takeSavedListState()
+if (restoreState) {
+  showFilters.value = restoreState.showFilters
+  filterCategoryId.value = restoreState.filters.categoryId
+  filterAccountId.value = restoreState.filters.accountId
+  filterProjectId.value = restoreState.filters.projectId
+  filterVehicleId.value = restoreState.filters.vehicleId
+  filterDateFrom.value = restoreState.filters.dateFrom
+  filterDateTo.value = restoreState.filters.dateTo
+  filterDeductibleOnly.value = restoreState.filters.deductibleOnly
+}
 
 // Master data for filter dropdowns
 const filterAccounts = ref<FilterAccount[]>([])
@@ -512,6 +554,40 @@ async function fetchTransactions(pageNum: number, append = false) {
   }
 }
 
+// Reload all pages that were loaded before leaving, then scroll back to the transaction
+async function restoreList(state: SavedListState) {
+  const requestId = ++latestRequestId
+  loading.value = true
+
+  try {
+    const results = await Promise.all(
+      Array.from({ length: state.page }, (_, i) =>
+        $fetch<{
+          transactions: Transaction[]
+          pagination: { hasMore: boolean }
+        }>('/api/transactions/list', {
+          query: { page: i + 1, limit, ...filterQuery.value }
+        })
+      )
+    )
+    if (requestId !== latestRequestId) return
+
+    transactions.value = results.flatMap(r => r.transactions)
+    hasMore.value = results[results.length - 1]?.pagination.hasMore ?? false
+    page.value = state.page
+  } catch (error) {
+    console.error('Failed to fetch transactions:', error)
+  } finally {
+    if (requestId === latestRequestId) {
+      loading.value = false
+    }
+  }
+
+  await nextTick()
+  const card = listRef.value?.querySelector(`[data-tx-id="${state.txId}"]`)
+  card?.scrollIntoView({ block: 'center' })
+}
+
 // Open detail modal
 async function openDetail(txId: number) {
   showDetail.value = true
@@ -564,6 +640,21 @@ function editTransaction() {
     const hasFuelLog = !!detailTransaction.value.fuelLog
     const hasMaintenanceLogs = detailTransaction.value.maintenanceLogs && detailTransaction.value.maintenanceLogs.length > 0
 
+    savedListState.value = {
+      txId,
+      page: page.value,
+      showFilters: showFilters.value,
+      filters: {
+        categoryId: filterCategoryId.value,
+        accountId: filterAccountId.value,
+        projectId: filterProjectId.value,
+        vehicleId: filterVehicleId.value,
+        dateFrom: filterDateFrom.value,
+        dateTo: filterDateTo.value,
+        deductibleOnly: filterDeductibleOnly.value
+      }
+    }
+
     closeDetail()
 
     if (isAutomotive) {
@@ -605,7 +696,11 @@ async function deleteTransaction() {
 // Initial load
 onMounted(() => {
   fetchPeriodBalances()
-  fetchTransactions(1)
+  if (restoreState) {
+    restoreList(restoreState)
+  } else {
+    fetchTransactions(1)
+  }
   fetchFilterData()
   setupInfiniteScroll()
 })

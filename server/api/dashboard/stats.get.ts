@@ -83,6 +83,42 @@ export default defineEventHandler(async (event) => {
             else prevScheduledExpenses += Math.abs(amount)
         }
 
+        // Yearly stats (all years, current year = year to date)
+        const yearlySql = await loadSql('dashboard/get_yearly_stats.sql')
+        const yearRows = await withConnection(async (conn) => {
+            return await conn.query(yearlySql, [result.userId])
+        })
+
+        const years = (yearRows as any[]).map((r: any) => ({
+            year: String(r.year),
+            income: Number(r.income) || 0,
+            expenses: Number(r.expenses) || 0
+        }))
+
+        const currentYear = String(now.getFullYear())
+        const currentYearData = years.find((y: any) => y.year === currentYear)
+
+        // Scheduled transactions still pending within the current year
+        const yearScheduledRows = await withConnection(async (conn) => {
+            return await conn.query(
+                `SELECT amount_from
+                 FROM transaction_schedules
+                 WHERE user_id = ?
+                   AND is_active = 1
+                   AND category_id NOT IN (-1, -3)
+                   AND YEAR(next_transaction_date) = ?`,
+                [result.userId, Number(currentYear)]
+            )
+        })
+
+        let yearScheduledIncome = 0
+        let yearScheduledExpenses = 0
+        for (const row of yearScheduledRows as any[]) {
+            const amount = Number(row.amount_from)
+            if (amount > 0) yearScheduledIncome += amount
+            else yearScheduledExpenses += Math.abs(amount)
+        }
+
         // Monthly averages (across all returned months)
         const monthCount = months.length || 1
         const avgExpenses = months.reduce((sum: number, m: any) => sum + m.expenses, 0) / monthCount
@@ -106,11 +142,21 @@ export default defineEventHandler(async (event) => {
                 expenses: Math.round(prevScheduledExpenses * 100) / 100,
                 income: Math.round(prevScheduledIncome * 100) / 100
             },
+            currentYear: {
+                label: currentYear,
+                expenses: currentYearData?.expenses || 0,
+                income: currentYearData?.income || 0
+            },
+            yearScheduled: {
+                expenses: Math.round(yearScheduledExpenses * 100) / 100,
+                income: Math.round(yearScheduledIncome * 100) / 100
+            },
             averages: {
                 expenses: Math.round(avgExpenses * 100) / 100,
                 income: Math.round(avgIncome * 100) / 100
             },
-            months
+            months,
+            years
         }
     } catch (error: any) {
         throw createError({

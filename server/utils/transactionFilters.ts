@@ -13,7 +13,9 @@ export function buildTransactionFilters(query: Record<string, unknown>): { sql: 
     const conditions: string[] = []
     const params: (number | string)[] = []
 
-    const categoryId = toId(query.categoryId)
+    // Special categories have negative ids: -1 <SPLIT>, -2 <NO_CATEGORY>, -3 <TRANSFER>
+    const rawCategoryId = Number(query.categoryId)
+    const categoryId = Number.isInteger(rawCategoryId) && rawCategoryId !== 0 ? rawCategoryId : null
     if (categoryId) {
         conditions.push('t.category_id = ?')
         params.push(categoryId)
