@@ -1,5 +1,5 @@
 import { createReadStream, existsSync, statSync } from 'fs'
-import { join, extname } from 'path'
+import { join, extname, sep } from 'path'
 import { sendStream, setResponseHeaders } from 'h3'
 
 // MIME types for common file extensions
@@ -9,7 +9,7 @@ const MIME_TYPES: Record<string, string> = {
     '.png': 'image/png',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
-    '.svg': 'image/svg+xml',
+    // .svg deliberately omitted: it would render inline and could run scripts (served as download instead)
     '.pdf': 'application/pdf',
     '.doc': 'application/msword',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -45,9 +45,10 @@ export default defineEventHandler(async (event) => {
     // Construct the full file path
     const filePath = join(process.cwd(), 'public', 'uploads', pathParam)
 
-    // Security: Prevent directory traversal attacks
-    const uploadsRoot = join(process.cwd(), 'public', 'uploads')
-    if (!filePath.startsWith(uploadsRoot)) {
+    // Security: Prevent directory traversal attacks and access to other users' files
+    // (attachments live under attachments/{userId}/...)
+    const userRoot = join(process.cwd(), 'public', 'uploads', 'attachments', String(result.userId))
+    if (!filePath.startsWith(userRoot + sep)) {
         throw createError({ statusCode: 403, message: 'Accesso negato' })
     }
 
@@ -70,7 +71,9 @@ export default defineEventHandler(async (event) => {
     setResponseHeaders(event, {
         'Content-Type': contentType,
         'Content-Length': stats.size.toString(),
-        'Cache-Control': 'private, max-age=3600'
+        'Cache-Control': 'private, max-age=3600',
+        // Unknown types are downloaded, never rendered in the app origin
+        ...(contentType === 'application/octet-stream' ? { 'Content-Disposition': 'attachment' } : {})
     })
 
     // Stream the file
