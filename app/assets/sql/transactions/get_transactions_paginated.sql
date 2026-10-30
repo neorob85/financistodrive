@@ -1,5 +1,6 @@
 -- Get transactions for user with pagination
 -- Ordered by transaction_date DESC for infinite scroll
+-- The FILTERS placeholder is replaced by list.get.ts with optional AND-conditions (alias t)
 -- balanceAmount: excludes transfers; for splits, sums only non-transfer children
 SELECT
   t.id,
@@ -47,5 +48,6 @@ LEFT JOIN (
 LEFT JOIN vehicles v_maint ON ml.vehicle_id = v_maint.id
 
 WHERE t.user_id = ? AND t.parent_id IS NULL
+  /*FILTERS*/
 ORDER BY t.transaction_date DESC
 LIMIT ? OFFSET ?

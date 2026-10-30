@@ -1,7 +1,7 @@
 <template>
   <div class="transactions-page">
     <!-- Filter bar -->
-    <div v-if="!loading || transactions.length > 0" class="filter-bar">
+    <div v-if="!loading || transactions.length > 0 || activeFilterCount > 0" class="filter-bar">
       <button class="filter-toggle" @click="showFilters = !showFilters" :class="{ active: activeFilterCount > 0 }">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
@@ -72,17 +72,17 @@
       <p>{{ $t('transactions.loadingTransactions') }}</p>
     </div>
 
+    <!-- No filter results -->
+    <div v-else-if="!loading && transactions.length === 0 && activeFilterCount > 0" class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h2>{{ $t('transactions.filters.noResults') }}</h2>
+    </div>
+
     <!-- Empty state -->
     <div v-else-if="!loading && transactions.length === 0" class="empty-state">
       <div class="empty-icon">💳</div>
       <h2>{{ $t('transactions.noTransactions') }}</h2>
       <p>{{ $t('transactions.addFirst') }}</p>
-    </div>
-
-    <!-- No filter results -->
-    <div v-else-if="filteredTransactions.length === 0 && activeFilterCount > 0" class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <h2>{{ $t('transactions.filters.noResults') }}</h2>
     </div>
 
     <!-- Transactions list -->
@@ -347,47 +347,24 @@ function flattenCategories(cats: FilterCategory[]): FlatFilterCategory[] {
   return result
 }
 
-// Parse date string as local time (shared helper)
-function parseLocalDate(dateStr: string): Date {
-  const normalized = dateStr.replace('T', ' ').replace('Z', '')
-  const parts = normalized.split(' ')
-  const datePart = parts[0] || ''
-  const timePart = parts[1] || '00:00:00'
-  const dateParts = datePart.split('-')
-  const timeParts = timePart.split(':')
-  return new Date(
-    parseInt(dateParts[0] || '0', 10),
-    parseInt(dateParts[1] || '1', 10) - 1,
-    parseInt(dateParts[2] || '1', 10),
-    parseInt(timeParts[0] || '0', 10),
-    parseInt(timeParts[1] || '0', 10),
-    parseInt(timeParts[2] || '0', 10)
-  )
-}
+// Filters are applied server-side so that matches not yet loaded are found too
+const filterQuery = computed(() => {
+  const q: Record<string, string | number> = {}
+  if (filterCategoryId.value !== null) q.categoryId = filterCategoryId.value
+  if (filterAccountId.value !== null) q.fromAccountId = filterAccountId.value
+  if (filterProjectId.value !== null) q.projectId = filterProjectId.value
+  if (filterVehicleId.value !== null) q.vehicleId = filterVehicleId.value
+  if (filterDateFrom.value) q.dateFrom = filterDateFrom.value
+  if (filterDateTo.value) q.dateTo = filterDateTo.value
+  if (filterDeductibleOnly.value) q.deductibleOnly = 'true'
+  return q
+})
 
-const filteredTransactions = computed(() => {
-  if (activeFilterCount.value === 0) return transactions.value
-
-  return transactions.value.filter(tx => {
-    if (filterCategoryId.value !== null && tx.categoryId !== filterCategoryId.value) return false
-    if (filterAccountId.value !== null && tx.fromAccountId !== filterAccountId.value) return false
-    if (filterProjectId.value !== null && tx.projectId !== filterProjectId.value) return false
-    if (filterVehicleId.value !== null && tx.vehicleId !== filterVehicleId.value) return false
-    if (filterDateFrom.value) {
-      const txDate = parseLocalDate(tx.transactionDate)
-      const from = new Date(filterDateFrom.value + 'T00:00:00')
-      if (txDate < from) return false
-    }
-    if (filterDateTo.value) {
-      const txDate = parseLocalDate(tx.transactionDate)
-      const to = new Date(filterDateTo.value + 'T23:59:59')
-      if (txDate > to) return false
-    }
-    if (filterDeductibleOnly.value && !tx.hasDeductible) {
-      return false
-    }
-    return true
-  })
+// Reload from the first page (and period totals) whenever filters change
+watch(filterQuery, () => {
+  page.value = 1
+  fetchTransactions(1)
+  fetchPeriodBalances()
 })
 
 async function fetchFilterData() {
@@ -406,20 +383,6 @@ async function fetchFilterData() {
     console.error('Failed to fetch filter data:', error)
   }
 }
-
-// Auto-load more when filters are active and not enough results
-const autoLoadingMore = ref(false)
-
-watch([filteredTransactions, hasMore], async () => {
-  if (activeFilterCount.value === 0) return
-  if (!hasMore.value || autoLoadingMore.value || loadingMore.value || loading.value) return
-  if (filteredTransactions.value.length < limit) {
-    autoLoadingMore.value = true
-    page.value++
-    await fetchTransactions(page.value, true)
-    autoLoadingMore.value = false
-  }
-})
 
 // Detail modal
 const showDetail = ref(false)
@@ -457,7 +420,7 @@ const groupedTransactions = computed(() => {
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  for (const tx of filteredTransactions.value) {
+  for (const tx of transactions.value) {
     const txDate = new Date(tx.transactionDate)
     const periodKey = getPeriodKey(txDate, now, today, yesterday, thisMonthStart, lastMonthStart)
 
@@ -495,10 +458,17 @@ function getFileName(path: string) {
   return path.split('/').pop() || path
 }
 
-// Fetch period balances (server-calculated totals for all transactions, not just loaded ones)
+// Fetch period balances (server-calculated totals for all matching transactions, not just loaded ones)
+// requestId discards responses superseded by a newer request (e.g. filters changed mid-load)
+let latestBalancesRequestId = 0
+
 async function fetchPeriodBalances() {
+  const requestId = ++latestBalancesRequestId
   try {
-    const result = await $fetch<{ periodBalances: Record<string, number> }>('/api/transactions/period-balances')
+    const result = await $fetch<{ periodBalances: Record<string, number> }>('/api/transactions/period-balances', {
+      query: filterQuery.value
+    })
+    if (requestId !== latestBalancesRequestId) return
     periodBalances.value = result.periodBalances
   } catch (error) {
     console.error('Failed to fetch period balances:', error)
@@ -506,7 +476,11 @@ async function fetchPeriodBalances() {
 }
 
 // Fetch transactions
+// requestId discards responses superseded by a newer request (e.g. filters changed mid-load)
+let latestRequestId = 0
+
 async function fetchTransactions(pageNum: number, append = false) {
+  const requestId = ++latestRequestId
   if (append) {
     loadingMore.value = true
   } else {
@@ -518,8 +492,9 @@ async function fetchTransactions(pageNum: number, append = false) {
       transactions: Transaction[]
       pagination: { hasMore: boolean }
     }>('/api/transactions/list', {
-      query: { page: pageNum, limit }
+      query: { page: pageNum, limit, ...filterQuery.value }
     })
+    if (requestId !== latestRequestId) return
 
     if (append) {
       transactions.value.push(...result.transactions)
@@ -530,8 +505,10 @@ async function fetchTransactions(pageNum: number, append = false) {
   } catch (error) {
     console.error('Failed to fetch transactions:', error)
   } finally {
-    loading.value = false
-    loadingMore.value = false
+    if (requestId === latestRequestId) {
+      loading.value = false
+      loadingMore.value = false
+    }
   }
 }
 
@@ -637,7 +614,7 @@ onMounted(() => {
 function setupInfiniteScroll() {
   const observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0]?.isIntersecting && hasMore.value && !loadingMore.value) {
+      if (entries[0]?.isIntersecting && hasMore.value && !loadingMore.value && !loading.value) {
         page.value++
         fetchTransactions(page.value, true)
       }

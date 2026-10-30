@@ -1,6 +1,7 @@
 -- Get expense totals grouped by period (today, yesterday, thisMonth, lastMonth, previous, future)
 -- Only expenses: excludes transfers, income, and child transactions (parent_id IS NOT NULL)
 -- For splits: sums only non-transfer children amounts
+-- The FILTERS placeholder is replaced by period-balances.get.ts with optional AND-conditions (alias t)
 SELECT
   CASE
     WHEN sub.transaction_date > NOW() THEN 'future'
@@ -22,6 +23,7 @@ FROM (
     END AS bal
   FROM transactions t
   WHERE t.user_id = ? AND t.parent_id IS NULL
+    /*FILTERS*/
 ) AS sub
 WHERE sub.bal < 0
 GROUP BY period

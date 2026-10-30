@@ -1,4 +1,5 @@
 import { withConnection } from '../../utils/db'
+import { buildTransactionFilters } from '../../utils/transactionFilters'
 
 export default defineEventHandler(async (event) => {
     // Check authentication
@@ -20,6 +21,9 @@ export default defineEventHandler(async (event) => {
     const limit = Math.min(50, Math.max(1, Number(query.limit) || 20))
     const accountId = query.accountId ? Number(query.accountId) : null
     const offset = (page - 1) * limit
+
+    // Optional filters (used by the transactions page, global list only)
+    const { sql: filterSql, params: filterParams } = buildTransactionFilters(query)
 
     try {
         const data = await withConnection(async (conn) => {
@@ -53,13 +57,13 @@ export default defineEventHandler(async (event) => {
                 const countResult = await conn.query(countSql, [result.userId, accountId, accountId, accountId])
                 total = Number(countResult[0]?.total || 0)
             } else {
-                // Get all transactions
-                const txSql = await loadSql('transactions/get_transactions_paginated.sql')
-                transactions = await conn.query(txSql, [result.userId, limit, offset])
+                // Get all transactions, with optional filters
+                const txSql = (await loadSql('transactions/get_transactions_paginated.sql')).replace('/*FILTERS*/', filterSql)
+                transactions = await conn.query(txSql, [result.userId, ...filterParams, limit, offset])
 
                 // Get total count
-                const countSql = await loadSql('transactions/count_transactions.sql')
-                const countResult = await conn.query(countSql, [result.userId])
+                const countSql = (await loadSql('transactions/count_transactions.sql')).replace('/*FILTERS*/', filterSql)
+                const countResult = await conn.query(countSql, [result.userId, ...filterParams])
                 total = Number(countResult[0]?.total || 0)
             }
 
