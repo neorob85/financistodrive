@@ -90,6 +90,15 @@ const { t } = useI18n()
 const config = useRuntimeConfig()
 const appName = config.public.appName as string
 const router = useRouter()
+const route = useRoute()
+
+// Only same-app paths: an absolute or protocol-relative URL would be an open redirect
+function redirectTarget(): string {
+  const redirect = route.query.redirect
+  return typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\')
+    ? redirect
+    : '/'
+}
 
 const form = ref({
   username: '',
@@ -109,8 +118,8 @@ async function handleLogin() {
       body: form.value
     })
 
-    // Redirect to home on success
-    router.push('/')
+    // Redirect to the requested page (home by default) on success
+    router.push(redirectTarget())
   } catch (err: any) {
     error.value = err.data?.message || t('login.error')
   } finally {

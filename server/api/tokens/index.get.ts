@@ -27,7 +27,9 @@ export default defineEventHandler(async (event) => {
                 lastUsedAt: t.last_used_at,
                 expiresAt: t.expires_at,
                 createdAt: t.created_at,
-                isRevoked: t.is_revoked === 1
+                isRevoked: t.is_revoked === 1,
+                canWrite: t.can_write === 1,
+                isOauth: Number(t.is_oauth) === 1
             }))
         }
     } catch (error: any) {

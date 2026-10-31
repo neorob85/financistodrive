@@ -28,7 +28,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
 
     if (!authResult.authenticated) {
-        return navigateTo('/login')
+        // Come back here after login (e.g. the OAuth consent page opened by Claude)
+        return navigateTo(to.fullPath === '/' ? '/login' : { path: '/login', query: { redirect: to.fullPath } })
     }
 
     // Condividi i dati utente con il layout per evitare una chiamata duplicata a /api/auth/me

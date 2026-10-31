@@ -50,6 +50,8 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: '/',
+      // The OAuth consent page, opened by Claude, must always come from the server
+      navigateFallbackDenylist: [/^\/oauth\//],
       importScripts: ['/sw-push.js']
     },
     devOptions: {

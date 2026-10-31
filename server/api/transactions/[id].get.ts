@@ -171,6 +171,7 @@ export default defineEventHandler(async (event) => {
             projectTitle: data.row.project_title,
             payeeId: data.row.payee_id,
             payeeTitle: data.row.payee_title,
+            currencyId: data.row.currency_id,
             currencyCode: data.row.currency_code,
             currencySymbol: data.row.currency_symbol,
             notes: data.row.notes,

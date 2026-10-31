@@ -85,8 +85,8 @@ export function resetJwtSecret(): void {
 /**
  * Create a JWT token for a user
  */
-export function createToken(userId: number): string {
-    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRATION })
+export function createToken(userId: number, expiresIn: jwt.SignOptions['expiresIn'] = JWT_EXPIRATION): string {
+    return jwt.sign({ userId }, JWT_SECRET, { expiresIn })
 }
 
 /**

@@ -35,6 +35,16 @@ async function columnExists(conn: PoolConnection, table: string, column: string)
     return rows.length > 0
 }
 
+async function indexExists(conn: PoolConnection, table: string, index: string): Promise<boolean> {
+    const rows = await conn.query(
+        `SELECT 1 FROM information_schema.statistics
+         WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?
+         LIMIT 1`,
+        [table, index]
+    )
+    return rows.length > 0
+}
+
 const MIGRATIONS: Migration[] = [
     {
         id: '001-transactions-is-system-generated',
@@ -77,6 +87,75 @@ const MIGRATIONS: Migration[] = [
 
             // No backfill: NULL means "billed on its own date", which is what every
             // existing transaction meant before the column existed.
+        }
+    },
+    {
+        id: '003-api-tokens-mcp',
+        description: 'Let API tokens be used by the MCP server, read-only unless write access is granted',
+        async run(conn) {
+            if (!(await columnExists(conn, 'api_tokens', 'can_write'))) {
+                await conn.query(
+                    `ALTER TABLE api_tokens
+                     ADD COLUMN can_write BOOLEAN NOT NULL DEFAULT 0
+                     COMMENT 'Token May Create Data Through The MCP Server, Otherwise Read-Only'`
+                )
+            }
+
+            // Tokens are looked up by hash on every MCP request
+            if (!(await indexExists(conn, 'api_tokens', 'idx_api_tokens_token_hash'))) {
+                await conn.query(`CREATE INDEX idx_api_tokens_token_hash ON api_tokens (token_hash)`)
+            }
+        }
+    },
+    {
+        id: '004-oauth',
+        description: 'OAuth 2.1 authorization server so claude.ai (web and mobile) can connect to the MCP server',
+        async run(conn) {
+            await conn.query(
+                `CREATE TABLE IF NOT EXISTS oauth_clients (
+                    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'OAuth Client ID',
+                    client_id VARCHAR(64) NOT NULL UNIQUE COMMENT 'Public Client Identifier',
+                    client_secret_hash VARCHAR(64) DEFAULT NULL COMMENT 'SHA-256 Of The Client Secret, NULL For Public Clients (PKCE Only)',
+                    client_name VARCHAR(100) DEFAULT NULL COMMENT 'Name Declared By The Client At Registration',
+                    redirect_uris TEXT NOT NULL COMMENT 'JSON Array Of Allowed Redirect URIs',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Registration Date'
+                 ) COMMENT 'OAuth Clients Registered Dynamically (RFC 7591). No depends from other tables.'`
+            )
+
+            await conn.query(
+                `CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
+                    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Authorization Code ID',
+                    code_hash VARCHAR(64) NOT NULL UNIQUE COMMENT 'SHA-256 Of The Authorization Code',
+                    client_id INT NOT NULL COMMENT 'Foreign Key To oauth_clients',
+                    user_id INT NOT NULL COMMENT 'Foreign Key To users',
+                    redirect_uri TEXT NOT NULL COMMENT 'Redirect URI The Code Was Issued For',
+                    code_challenge VARCHAR(128) NOT NULL COMMENT 'PKCE S256 Code Challenge',
+                    can_write BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Write Access Granted By The User',
+                    expires_at DATETIME NOT NULL COMMENT 'Expiration, A Few Minutes After Issue',
+                    CONSTRAINT fk_oauth_codes_clients FOREIGN KEY (client_id) REFERENCES oauth_clients(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_oauth_codes_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                 ) COMMENT 'Single-Use OAuth Authorization Codes. Depends from oauth_clients and users tables.'`
+            )
+
+            // An OAuth grant is an api_tokens row: its access token rotates with the refresh
+            // token, and the user revokes it from Settings like any other token
+            if (!(await columnExists(conn, 'api_tokens', 'oauth_client_id'))) {
+                await conn.query(
+                    `ALTER TABLE api_tokens
+                     ADD COLUMN oauth_client_id INT DEFAULT NULL COMMENT 'OAuth Client The Token Was Issued To, NULL For Tokens Created By The User',
+                     ADD CONSTRAINT fk_api_tokens_oauth_clients FOREIGN KEY (oauth_client_id) REFERENCES oauth_clients(id) ON DELETE CASCADE`
+                )
+            }
+            if (!(await columnExists(conn, 'api_tokens', 'refresh_token_hash'))) {
+                await conn.query(
+                    `ALTER TABLE api_tokens
+                     ADD COLUMN refresh_token_hash VARCHAR(64) DEFAULT NULL COMMENT 'OAuth Only: SHA-256 Of The Current Refresh Token',
+                     ADD COLUMN refresh_expires_at DATETIME DEFAULT NULL COMMENT 'OAuth Only: Refresh Token Expiration'`
+                )
+            }
+            if (!(await indexExists(conn, 'api_tokens', 'idx_api_tokens_refresh_token_hash'))) {
+                await conn.query(`CREATE INDEX idx_api_tokens_refresh_token_hash ON api_tokens (refresh_token_hash)`)
+            }
         }
     }
 ]

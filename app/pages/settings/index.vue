@@ -164,41 +164,18 @@
       </div>
     </section>
 
-    <!-- API Tokens Section -->
+    <!-- Claude / MCP Section -->
     <section class="settings-section">
-      <h2>{{ $t('settings.apiTokens') }}</h2>
-      <div class="glass-card">
-        <div v-if="loadingTokens" class="loading-state">
-          <div class="spinner"></div>
+      <h2>{{ $t('settings.mcp.title') }}</h2>
+      <NuxtLink to="/settings/mcp" class="glass-card link-card">
+        <div class="link-card-info">
+          <strong>{{ $t('settings.mcp.linkTitle') }}</strong>
+          <span class="backup-hint">{{ $t('settings.mcp.linkDesc') }}</span>
         </div>
-        <div v-else-if="tokens.length === 0" class="empty-tokens">
-          <p>{{ $t('settings.noTokens') }}</p>
-        </div>
-        <div v-else class="tokens-list">
-          <div v-for="token in tokens" :key="token.id" class="token-item" :class="{ revoked: token.isRevoked }">
-            <div class="token-info">
-              <div class="token-name">{{ token.name || $t('settings.unnamedToken') }}</div>
-              <div class="token-meta">
-                <span>{{ $t('settings.created') }}: {{ formatDate(token.createdAt) }}</span>
-                <span v-if="token.lastUsedAt">• {{ $t('settings.lastUsed') }}: {{ formatDate(token.lastUsedAt) }}</span>
-                <span>• {{ $t('settings.expires') }}: {{ formatDate(token.expiresAt) }}</span>
-              </div>
-              <div v-if="token.isRevoked" class="token-status revoked">{{ $t('settings.disabled') }}</div>
-              <div v-else class="token-status active">{{ $t('common.active') }}</div>
-            </div>
-            <div class="token-actions">
-              <button class="btn btn-sm" :class="token.isRevoked ? 'btn-success' : 'btn-warning'"
-                @click="toggleToken(token.id)" :disabled="togglingToken === token.id">
-                {{ token.isRevoked ? $t('common.activate') : $t('common.deactivate') }}
-              </button>
-              <button class="btn btn-sm btn-danger" @click="deleteToken(token.id)"
-                :disabled="deletingToken === token.id">
-                {{ $t('common.delete') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </NuxtLink>
     </section>
 
     <!-- Backup & Restore Section -->
@@ -281,15 +258,6 @@ interface Profile {
   email: string | null
 }
 
-interface Token {
-  id: number
-  name: string | null
-  lastUsedAt: string | null
-  expiresAt: string
-  createdAt: string
-  isRevoked: boolean
-}
-
 interface Message {
   type: 'success' | 'error'
   text: string
@@ -308,13 +276,8 @@ const passwords = ref({
   confirm: ''
 })
 
-const tokens = ref<Token[]>([])
-
 const savingProfile = ref(false)
 const changingPassword = ref(false)
-const loadingTokens = ref(true)
-const togglingToken = ref<number | null>(null)
-const deletingToken = ref<number | null>(null)
 const savingLanguage = ref(false)
 
 const profileMessage = ref<Message | null>(null)
@@ -328,7 +291,7 @@ onMounted(async () => {
   selectedLanguage.value = locale.value
   selectedTheme.value = theme.value
   pushState.checkSupport()
-  await Promise.all([loadProfile(), loadTokens(), pushState.checkSubscription()])
+  await Promise.all([loadProfile(), pushState.checkSubscription()])
 })
 
 // Watch locale changes
@@ -386,18 +349,6 @@ async function loadProfile() {
   }
 }
 
-async function loadTokens() {
-  loadingTokens.value = true
-  try {
-    const data = await $fetch<{ tokens: Token[] }>('/api/tokens')
-    tokens.value = data.tokens
-  } catch {
-    // Tokens loading failed silently
-  } finally {
-    loadingTokens.value = false
-  }
-}
-
 async function saveProfile() {
   savingProfile.value = true
   profileMessage.value = null
@@ -443,42 +394,6 @@ async function changePassword() {
   } finally {
     changingPassword.value = false
   }
-}
-
-async function toggleToken(id: number) {
-  togglingToken.value = id
-  try {
-    await $fetch(`/api/tokens/${id}/toggle`, { method: 'POST' })
-    await loadTokens()
-  } catch {
-    // Error handling
-  } finally {
-    togglingToken.value = null
-  }
-}
-
-async function deleteToken(id: number) {
-  if (!confirm(t('settings.deleteTokenConfirm'))) return
-
-  deletingToken.value = id
-  try {
-    await $fetch(`/api/tokens/${id}`, { method: 'DELETE' })
-    tokens.value = tokens.value.filter(t => t.id !== id)
-  } catch {
-    // Error handling
-  } finally {
-    deletingToken.value = null
-  }
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '-'
-  const localeMap: Record<string, string> = { it: 'it-IT', en: 'en-US' }
-  return new Date(dateStr).toLocaleDateString(localeMap[locale.value] || 'it-IT', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
 }
 
 // Backup & Restore
@@ -663,82 +578,30 @@ async function handleRestore(event: Event) {
   color: var(--color-error);
 }
 
-.loading-state {
+.link-card {
   display: flex;
-  justify-content: center;
-  padding: var(--space-xl);
-}
-
-.empty-tokens {
-  text-align: center;
-  padding: var(--space-lg);
-  color: var(--color-text-muted);
-}
-
-.tokens-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.token-item {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: var(--space-md) var(--space-lg);
-  background: var(--color-bg-elevated);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border);
+  justify-content: space-between;
+  gap: var(--space-md);
+  color: var(--color-text-primary);
+  text-decoration: none;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.token-item:hover {
+.link-card:hover {
   transform: translateX(4px);
   box-shadow: var(--shadow-lg);
 }
 
-.token-item.revoked {
-  opacity: 0.6;
-}
-
-.token-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.token-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-  margin-bottom: var(--space-xs);
-}
-
-.token-meta {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
+.link-card-info {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-xs);
 }
 
-.token-status {
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-top: var(--space-xs);
-}
-
-.token-status.active {
-  color: var(--color-success);
-}
-
-.token-status.revoked {
-  color: var(--color-error);
-}
-
-.token-actions {
-  display: flex;
-  gap: var(--space-sm);
+.link-card svg {
   flex-shrink: 0;
-  margin-left: var(--space-md);
+  color: var(--color-text-muted);
 }
 
 .btn-sm {
@@ -788,23 +651,6 @@ async function handleRestore(event: Event) {
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 500px) {
-  .token-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-md);
-  }
-
-  .token-actions {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .token-actions .btn {
-    flex: 1;
   }
 }
 

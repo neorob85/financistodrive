@@ -49,7 +49,37 @@ VALUES
     ('theme', 'light', -1);
 
 -- ---------------------------------------------------- --
--- API TOKENS TABLE (no dependends)
+-- OAUTH CLIENTS TABLE (no dependends)
+-- ---------------------------------------------------- --
+
+CREATE TABLE `oauth_clients` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'OAuth Client ID',
+    `client_id` VARCHAR(64) NOT NULL UNIQUE COMMENT 'Public Client Identifier',
+    `client_secret_hash` VARCHAR(64) DEFAULT NULL COMMENT 'SHA-256 Of The Client Secret, NULL For Public Clients (PKCE Only)',
+    `client_name` VARCHAR(100) DEFAULT NULL COMMENT 'Name Declared By The Client At Registration',
+    `redirect_uris` TEXT NOT NULL COMMENT 'JSON Array Of Allowed Redirect URIs',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Registration Date'
+) COMMENT 'OAuth Clients Registered Dynamically (RFC 7591). No depends from other tables.';
+
+-- ---------------------------------------------------- --
+-- OAUTH AUTHORIZATION CODES TABLE (depends from: oauth_clients, users)
+-- ---------------------------------------------------- --
+
+CREATE TABLE `oauth_authorization_codes` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Authorization Code ID',
+    `code_hash` VARCHAR(64) NOT NULL UNIQUE COMMENT 'SHA-256 Of The Authorization Code',
+    `client_id` INT NOT NULL COMMENT 'Foreign Key To oauth_clients',
+    `user_id` INT NOT NULL COMMENT 'Foreign Key To users',
+    `redirect_uri` TEXT NOT NULL COMMENT 'Redirect URI The Code Was Issued For',
+    `code_challenge` VARCHAR(128) NOT NULL COMMENT 'PKCE S256 Code Challenge',
+    `can_write` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Write Access Granted By The User',
+    `expires_at` DATETIME NOT NULL COMMENT 'Expiration, A Few Minutes After Issue',
+    CONSTRAINT `fk_oauth_codes_clients` FOREIGN KEY (`client_id`) REFERENCES `oauth_clients`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_oauth_codes_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) COMMENT 'Single-Use OAuth Authorization Codes. Depends from oauth_clients and users tables.';
+
+-- ---------------------------------------------------- --
+-- API TOKENS TABLE (depends from: users, oauth_clients)
 -- ---------------------------------------------------- --
 
 CREATE TABLE `api_tokens` (
@@ -61,7 +91,14 @@ CREATE TABLE `api_tokens` (
     `expires_at` DATETIME NOT NULL,
     `created_at` DATETIME DEFAULT NOW(),
     `is_revoked` BOOLEAN DEFAULT 0,
-    CONSTRAINT `fk_api_tokens_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+    `can_write` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'Token May Create Data Through The MCP Server, Otherwise Read-Only',
+    `oauth_client_id` INT DEFAULT NULL COMMENT 'OAuth Client The Token Was Issued To, NULL For Tokens Created By The User',
+    `refresh_token_hash` VARCHAR(64) DEFAULT NULL COMMENT 'OAuth Only: SHA-256 Of The Current Refresh Token',
+    `refresh_expires_at` DATETIME DEFAULT NULL COMMENT 'OAuth Only: Refresh Token Expiration',
+    INDEX `idx_api_tokens_token_hash` (`token_hash`),
+    INDEX `idx_api_tokens_refresh_token_hash` (`refresh_token_hash`),
+    CONSTRAINT `fk_api_tokens_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_api_tokens_oauth_clients` FOREIGN KEY (`oauth_client_id`) REFERENCES `oauth_clients`(`id`) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------- --
